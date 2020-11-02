@@ -94,6 +94,7 @@ export const MoneyPane = {
         window.alert('hm');
       }
     })
+    paneDiv.innerHTML='<h2>under construction</h2><p>Upload a .csv file from your bank:</p>'
     paneDiv.appendChild(uploadButton)
     paneDiv.appendChild(listDiv)
     return paneDiv
