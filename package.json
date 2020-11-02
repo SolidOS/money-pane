@@ -1,6 +1,6 @@
 {
   "name": "money-pane",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Solid-compatible Panes: Money",
   "main": "./lib/main.js",
   "files": [
