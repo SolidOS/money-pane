@@ -1,0 +1,80 @@
+{
+  "name": "money-pane",
+  "version": "0.0.0",
+  "description": "Solid-compatible Panes: Money",
+  "main": "./lib/main.js",
+  "files": [
+    "src",
+    "lib",
+    "dist"
+  ],
+  "scripts": {
+    "lint": "eslint '*.js'",
+    "lint-fix": "eslint '*.js' --fix",
+    "test": "npm run lint",
+    "prepublishOnly": "npm test && npm run build && npm run build-lib",
+    "postpublish": "git push origin master --follow-tags",
+    "watch": "webpack --watch",
+    "start": "webpack-dev-server --open",
+    "build": "webpack",
+    "build-lib": "babel src -d lib --source-maps --extensions '.ts,.js'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solid/money-pane"
+  },
+  "keywords": [
+    "solid",
+    "money",
+    "decentralized",
+    "web",
+    "rdf",
+    "ldp",
+    "linked",
+    "pane",
+    "app",
+    "data"
+  ],
+  "author": "Michiel de Jong <michiel@unhosted.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solid/money-pane/issues"
+  },
+  "homepage": "https://github.com/solid/money-pane",
+  "dependencies": {
+    "buffer": "^5.6.1",
+    "crypto-browserify": "^3.12.0",
+    "path-browserify": "^1.0.1",
+    "solid-ui": "^2.3.2",
+    "stream-browserify": "^3.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.12.1",
+    "@babel/core": "^7.12.3",
+    "@babel/plugin-transform-runtime": "^7.12.1",
+    "@babel/preset-env": "^7.12.1",
+    "@babel/preset-typescript": "^7.12.1",
+    "babel-loader": "^8.1.0",
+    "eslint": "^7.12.0",
+    "html-webpack-plugin": "^4.5.0",
+    "husky": "^4.3.0",
+    "lint-staged": "^10.4.2",
+    "solid-auth-cli": "^1.0.15",
+    "standard": "^15.0.0",
+    "typescript": "^4.0.3",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm test"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint"
+    ]
+  }
+}
