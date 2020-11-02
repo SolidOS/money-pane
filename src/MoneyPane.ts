@@ -1,9 +1,11 @@
-/*   Long Chat Pane
+/*   Money Pane
  **
- **  A long chat consists a of a series of chat files saved by date.
+ **  A ledger consists a of a series of transactions.
  */
 
 import { icons, ns } from 'solid-ui'
+import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
+import { parseCsv } from './parsers/asnbank-csv'
 ns.money = function (tag) {
   return 'https://example.com/#' + tag // @@TBD
 }
@@ -13,9 +15,19 @@ const $rdf = require('rdflib')
 const mainClass = ns.money('Ledger')
 const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
 
+function importCsvFile(text: string, dom: HTMLDocument, listDiv: HTMLDivElement) { 
+  listDiv.innerHTML = '<ul></ul>'
+  const lines = text.split('\n')
+  const transactions = parseCsv(lines, 'asnbank')
+  for (let shop in transactions) {
+    const li = dom.createElement('li')
+    li.innerHTML = shop
+    listDiv.appendChild(li)
+  }
+}
+
 export const MoneyPane = {
-  // noun_704.svg Canoe   noun_346319.svg = 1 Chat  noun_1689339.svg = three chat
-  icon: 'noun_1689339.svg',
+  icon: 'noun_Trade_1585569.svg', // Trade by bezier master from the Noun Project
   name: 'Personal Finance',
   label (subject, context) {
     const kb = context.session.store
@@ -31,7 +43,7 @@ export const MoneyPane = {
     const kb = context.session.store
     var updater = kb.updater
     if (newPaneOptions.me && !newPaneOptions.me.uri) {
-      throw new Error('chat mintNew:  Invalid userid ' + newPaneOptions.me)
+      throw new Error('money mintNew:  Invalid userid ' + newPaneOptions.me)
     }
 
     var newInstance = (newPaneOptions.newInstance =
@@ -69,8 +81,21 @@ export const MoneyPane = {
   render: function (subject, context, paneOptions) {
     const dom = context.dom
     // const kb = context.session.store
-    const div = dom.createElement('div')
-    div.appendChild(dom.createTextNode('this is the money pane'))
-    return div
+    const paneDiv = dom.createElement('div')
+    const listDiv = dom.createElement('div')
+    const uploadButton = fileUploadButtonDiv(document, (files) => {
+      if (files.length === 1) {
+        const reader = new FileReader();
+        reader.addEventListener('load', (event) => {
+          importCsvFile(event.target.result.toString(), dom, listDiv);
+        });
+        reader.readAsText(files[0]);
+      } else {
+        window.alert('hm');
+      }
+    })
+    paneDiv.appendChild(uploadButton)
+    paneDiv.appendChild(listDiv)
+    return paneDiv
   }
 }

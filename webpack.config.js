@@ -42,12 +42,24 @@ module.exports = [{
 },
 {
   mode: 'development',
-  entry: {
-    moneyPane: './src/moneyPane.ts'
-  },
+  entry: './src/moneyPane.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js'
+    filename: 'moneyPane.js'
+  },
+  resolve: {
+    extensions: ['.mjs', '.js', '.ts']
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(mjs|js|ts)$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
   },
   externals: {
     fs: 'null',
