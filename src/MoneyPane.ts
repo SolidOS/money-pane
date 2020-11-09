@@ -16,15 +16,14 @@ const mainClass = ns.money('Ledger')
 const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
 
 function importCsvFile(text: string, dom: HTMLDocument, listDiv: HTMLDivElement) { 
-  listDiv.innerHTML = '<ul></ul>'
+  let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
   // TODO: Support more banks than just ASN Bank
   const halfTrades = parseAsnCsv(text)
-  for (let shop in halfTrades) {
-    const li = dom.createElement('li')
-    li.innerHTML = shop
-    listDiv.appendChild(li)
-    console.log(shop, halfTrades[shop])
-  }
+  halfTrades.forEach(halfTrade => {
+    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
+    console.log(halfTrade)
+  })
+  listDiv.innerHTML = str + '</table>';
 }
 
 export const MoneyPane = {
