@@ -5,7 +5,7 @@
 
 import { icons, ns } from 'solid-ui'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
-import { parseCsv } from './parsers/asnbank-csv'
+import { parseAsnCsv } from './parsers/asnbank-csv'
 ns.money = function (tag) {
   return 'https://example.com/#' + tag // @@TBD
 }
@@ -17,12 +17,13 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
 
 function importCsvFile(text: string, dom: HTMLDocument, listDiv: HTMLDivElement) { 
   listDiv.innerHTML = '<ul></ul>'
-  const lines = text.split('\n')
-  const transactions = parseCsv(lines, 'asnbank')
-  for (let shop in transactions) {
+  // TODO: Support more banks than just ASN Bank
+  const halfTrades = parseAsnCsv(text)
+  for (let shop in halfTrades) {
     const li = dom.createElement('li')
     li.innerHTML = shop
     listDiv.appendChild(li)
+    console.log(shop, halfTrades[shop])
   }
 }
 
@@ -94,7 +95,7 @@ export const MoneyPane = {
         window.alert('hm');
       }
     })
-    paneDiv.innerHTML='<h2>under construction</h2><p>Upload a .csv file from your bank:</p>'
+    paneDiv.innerHTML='<h2>under construction</h2><p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>'
     paneDiv.appendChild(uploadButton)
     paneDiv.appendChild(listDiv)
     return paneDiv
