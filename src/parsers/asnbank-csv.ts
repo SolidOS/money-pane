@@ -1,4 +1,4 @@
-import { HalfTrade, Shop } from '../Ledger'
+import { HalfTrade, SettledPurchase, Shop } from '../Ledger'
 
 function capitalize(str) {
   let truncated
