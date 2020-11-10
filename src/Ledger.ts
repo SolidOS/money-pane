@@ -1,11 +1,18 @@
-export type HalfTrade = {
-  date: Date
-  fromId: string
-  toId: string
-  halfTradeId: string
-  amount: number
-  unit: string
-  description: string
+export class HalfTrade {
+  date: Date;
+  fromId: string;
+  toId: string;
+  halfTradeId: string;
+  amount: number;
+  unit: string;
+  description: string;
+  saveTo(store: IndexedFormula, baseUrl: string) {
+    const dayLog = `${baseUrl}${this.date.getUTCFullYear()}/${this.date.getUTCMonth()}/${this.date.getUTCDay()}/`
+    const uri = `${dayLog}/${this.fromId}/${this.toId}#halfTradeId`
+    store.add(
+      new store.blankNode()
+    )
+  }
 }
 
 export class Shop {

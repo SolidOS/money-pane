@@ -4,25 +4,20 @@ import { store } from 'solid-ui'
 import * as SolidAuth from 'solid-auth-client'
 import { MoneyPane } from './moneyPane'
 
+const LEDGER_DOC = '/ledger.ttl'
+
 const menuDiv = document.createElement('div')
 
-async function appendMoneyPane (dom, uri) {
-  const subject = sym(uri)
-  const doc = subject.doc()
-
-  await new Promise((resolve, reject) => {
-    store.fetcher.load(doc).then(resolve, reject)
-  })
-  const context = { // see https://github.com/solid/solid-panes/blob/005f90295d83e499fd626bd84aeb3df10135d5c1/src/index.ts#L30-L34
-    dom,
-    session: {
-      store
-    }
+async function appendMoneyPane (dom: HTMLDocument, currentWebId: string) {
+  const context = {
+    dom
   }
-  const options = {}
+  const options = {
+  }
+  const graph = new URL(LEDGER_DOC, currentWebId)
   // renderMenuDiv()
   dom.body.appendChild(menuDiv)
-  const paneDiv = MoneyPane.render(subject, context, options)
+  const paneDiv = MoneyPane.render(graph, context, options)
   dom.body.appendChild(paneDiv)
 }
 
@@ -39,7 +34,7 @@ window.onload = () => {
       console.log(`Logged in as ${session.webId}`)
 
       document.getElementById('loginBanner').innerHTML = `Logged in as ${session.webId} <button onclick="logout()">Log out</button>`
-      appendMoneyPane(document, 'https://michielbdejong.solidcommunity.net/profile/card#me')
+      appendMoneyPane(document, session.webId)
     }
   })
 }

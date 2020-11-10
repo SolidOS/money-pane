@@ -3,27 +3,44 @@
  **  A ledger consists a of a series of transactions.
  */
 
-import { icons, ns } from 'solid-ui'
+import { v4 as uuidv4 } from 'uuid'
+import { icons, ns, solidLogicSingleton } from 'solid-ui'
+import { st } from 'rdflib'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
 import { parseAsnCsv } from './parsers/asnbank-csv'
-ns.money = function (tag) {
-  return 'https://example.com/#' + tag // @@TBD
-}
 
-const $rdf = require('rdflib')
+ns.halftrade = (label: string) => `https://ledgerloops.com/vocab/halftrade#${label}`
+ns.money = (tag: string) => `https://example.com/#${tag}` // @@TBD
 
-const mainClass = ns.money('Ledger')
+const mainClass = ns.halftrade('Ledger')
 const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
 
-function importCsvFile(text: string, dom: HTMLDocument, listDiv: HTMLDivElement) { 
+function generateTable(halfTrades: HalfTrade[]) {
+  let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
+  halfTrades.forEach(halfTrade => {
+    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
+  })
+  return str + '</table>\n'
+}
+
+async function importCsvFile(text: string, graph: string): Promise<void> { 
   let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
   // TODO: Support more banks than just ASN Bank
   const halfTrades = parseAsnCsv(text)
+  const ins = []
   halfTrades.forEach(halfTrade => {
     str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
     console.log(halfTrade)
+    const sub = uuidv4()
+    ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), graph))
+    const fields = [ 'date', 'from', 'to', 'amount', 'unit', 'impliedBy', 'description' ]
+    fields.forEach((field: string) => {
+      ins.push(st(sub, ns.halftrade(field), halfTrade[field], graph))
+    })
   })
-  listDiv.innerHTML = str + '</table>';
+  console.log(`Imported ${ins.length} triples, patching your ledger`)
+  await solidLogicSingleton.updatePromise([], ins)
+  console.log('done')
 }
 
 export const MoneyPane = {
@@ -78,7 +95,7 @@ export const MoneyPane = {
     })
   },
 
-  render: function (subject, context, paneOptions) {
+  render: function (subject, context: { dom: HTMLDocument }, paneOptions: {}) {
     const dom = context.dom
     // const kb = context.session.store
     const paneDiv = dom.createElement('div')
@@ -87,7 +104,7 @@ export const MoneyPane = {
       if (files.length === 1) {
         const reader = new FileReader();
         reader.addEventListener('load', (event) => {
-          importCsvFile(event.target.result.toString(), dom, listDiv);
+          importCsvFile(event.target.result.toString(), subject);
         });
         reader.readAsText(files[0]);
       } else {
