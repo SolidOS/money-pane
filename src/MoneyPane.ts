@@ -5,12 +5,12 @@
 
 import { v4 as uuidv4 } from 'uuid'
 import { icons, ns, solidLogicSingleton } from 'solid-ui'
-import { st } from 'rdflib'
+import { st, namedNode } from 'rdflib'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
 import { parseAsnCsv } from './parsers/asnbank-csv'
 
-ns.halftrade = (label: string) => `https://ledgerloops.com/vocab/halftrade#${label}`
-ns.money = (tag: string) => `https://example.com/#${tag}` // @@TBD
+ns.halftrade = (label: string) => namedNode(`https://ledgerloops.com/vocab/halftrade#${label}`)
+ns.money = (tag: string) => namedNode(`https://example.com/#${tag}`) // @@TBD
 
 const mainClass = ns.halftrade('Ledger')
 const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
@@ -23,19 +23,23 @@ function generateTable(halfTrades: HalfTrade[]) {
   return str + '</table>\n'
 }
 
-async function importCsvFile(text: string, graph: string): Promise<void> { 
+async function importCsvFile(text: string, graphStr: string): Promise<void> { 
   let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
   // TODO: Support more banks than just ASN Bank
   const halfTrades = parseAsnCsv(text)
   const ins = []
+  const why = namedNode(graphStr)
   halfTrades.forEach(halfTrade => {
     str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
-    console.log(halfTrade)
-    const sub = uuidv4()
-    ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), graph))
+    // console.log(halfTrade)
+    const sub = namedNode(new URL(`#${uuidv4()}`, graphStr).toString())
+    ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), why))
     const fields = [ 'date', 'from', 'to', 'amount', 'unit', 'impliedBy', 'description' ]
     fields.forEach((field: string) => {
-      ins.push(st(sub, ns.halftrade(field), halfTrade[field], graph))
+      if (!!halfTrade[field]) {
+        // console.log(halfTrade)
+        ins.push(st(sub, ns.halftrade(field), halfTrade[field], why))
+      }
     })
   })
   console.log(`Imported ${ins.length} triples, patching your ledger`)
@@ -95,7 +99,7 @@ export const MoneyPane = {
     })
   },
 
-  render: function (subject, context: { dom: HTMLDocument }, paneOptions: {}) {
+  render: function (subject: string, context: { dom: HTMLDocument }, paneOptions: {}) {
     const dom = context.dom
     // const kb = context.session.store
     const paneDiv = dom.createElement('div')

@@ -14,10 +14,10 @@ async function appendMoneyPane (dom: HTMLDocument, currentWebId: string) {
   }
   const options = {
   }
-  const graph = new URL(LEDGER_DOC, currentWebId)
+  const graphStr: string = new URL(LEDGER_DOC, currentWebId).toString()
   // renderMenuDiv()
   dom.body.appendChild(menuDiv)
-  const paneDiv = MoneyPane.render(graph, context, options)
+  const paneDiv = MoneyPane.render(graphStr, context, options)
   dom.body.appendChild(paneDiv)
 }
 
