@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid'
-import { icons, ns, solidLogicSingleton } from 'solid-ui'
+import { icons, ns, solidLogicSingleton, authn } from 'solid-ui'
 import { st, namedNode } from 'rdflib'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
 import { parseAsnCsv } from './parsers/asnbank-csv'
@@ -21,6 +21,10 @@ function generateTable(halfTrades: HalfTrade[]) {
     str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
   })
   return str + '</table>\n'
+}
+
+async function findLedgers() {
+  return authn.findAppInstances({}, ns.halftrade('Ledger'))
 }
 
 async function importCsvFile(text: string, graphStr: string): Promise<void> { 
@@ -100,6 +104,7 @@ export const MoneyPane = {
   },
 
   render: function (subject: string, context: { dom: HTMLDocument }, paneOptions: {}) {
+    console.log('rendering')
     const dom = context.dom
     // const kb = context.session.store
     const paneDiv = dom.createElement('div')
@@ -115,9 +120,14 @@ export const MoneyPane = {
         window.alert('hm');
       }
     })
+    console.log('finding ledgers')
+    findLedgers().then((ledgers) => {
+      console.log({ ledgers })
+    })
     paneDiv.innerHTML='<h2>under construction</h2><p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>'
     paneDiv.appendChild(uploadButton)
     paneDiv.appendChild(listDiv)
+    console.log('returning paneDiv')
     return paneDiv
   }
 }
