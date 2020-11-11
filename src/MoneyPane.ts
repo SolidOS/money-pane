@@ -5,7 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid'
 import { icons, ns, solidLogicSingleton, authn } from 'solid-ui'
-import { st, namedNode } from 'rdflib'
+import { st, namedNode, NamedNode } from 'rdflib'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
 import { parseAsnCsv } from './parsers/asnbank-csv'
 
@@ -23,8 +23,9 @@ function generateTable(halfTrades: HalfTrade[]) {
   return str + '</table>\n'
 }
 
-async function findLedgers() {
-  return authn.findAppInstances({}, ns.halftrade('Ledger'))
+async function findLedgers(): Promise<NamedNode[]> {
+  const context = await authn.findAppInstances({}, ns.halftrade('Ledger'))
+  return context.instances
 }
 
 async function importCsvFile(text: string, graphStr: string): Promise<void> { 
@@ -102,7 +103,19 @@ export const MoneyPane = {
       )
     })
   },
-
+  kickOffAsyncRender: async function (listDiv: HTMLElement) {
+    listDiv.innerHTML = `<p>(finding HalfTrade ledgers on your pod...)</p>\n`
+    console.log('finding ledgers')
+    const ledgers = await findLedgers()
+    await solidLogicSingleton.load(ledgers)
+    let halfTradeSubjects = solidLogicSingleton.store.each(undefined, ns.rdf('type'), ns.halftrade('HalfTrade'))
+    if (!Array.isArray(halfTradeSubjects)) {
+      halfTradeSubjects = [ halfTradeSubjects ]
+    }
+    const listItems = halfTradeSubjects.map(sub => `<li>${sub.value}</li>`)
+    // const listItems = [JSON.stringify(halfTradeSubjects)]
+    listDiv.innerHTML = `<ul>\n${listItems.join('\n')}</ul>\n`
+  },
   render: function (subject: string, context: { dom: HTMLDocument }, paneOptions: {}) {
     console.log('rendering')
     const dom = context.dom
@@ -120,10 +133,7 @@ export const MoneyPane = {
         window.alert('hm');
       }
     })
-    console.log('finding ledgers')
-    findLedgers().then((ledgers) => {
-      console.log({ ledgers })
-    })
+    void this.kickOffAsyncRender(listDiv)
     paneDiv.innerHTML='<h2>under construction</h2><p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>'
     paneDiv.appendChild(uploadButton)
     paneDiv.appendChild(listDiv)
