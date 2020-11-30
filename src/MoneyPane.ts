@@ -8,6 +8,7 @@ import { icons, ns, solidLogicSingleton, authn } from 'solid-ui'
 import { st, namedNode, NamedNode } from 'rdflib'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
 import { parseAsnCsv } from './parsers/asnbank-csv'
+import { HalfTrade, HALF_TRADE_FIELDS } from './Ledger'
 
 ns.halftrade = (label: string) => namedNode(`https://ledgerloops.com/vocab/halftrade#${label}`)
 ns.money = (tag: string) => namedNode(`https://example.com/#${tag}`) // @@TBD
@@ -18,7 +19,11 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
 function generateTable(halfTrades: HalfTrade[]) {
   let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
   halfTrades.forEach(halfTrade => {
-    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
+    str += `<tr><td>${halfTrade.date}</td>`
+      + `<td>${halfTrade.from}</td>`
+      + `<td>${halfTrade.to}</td>`
+      + `<td>${halfTrade.amount} ${halfTrade.unit}</td>`
+      + `<td>${halfTrade.description}</td></tr>\n`
   })
   return str + '</table>\n'
 }
@@ -35,12 +40,11 @@ async function importCsvFile(text: string, graphStr: string): Promise<void> {
   const ins = []
   const why = namedNode(graphStr)
   halfTrades.forEach(halfTrade => {
-    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
+    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.from}</td><td>${halfTrade.to}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
     // console.log(halfTrade)
     const sub = namedNode(new URL(`#${uuidv4()}`, graphStr).toString())
     ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), why))
-    const fields = [ 'date', 'from', 'to', 'amount', 'unit', 'impliedBy', 'description' ]
-    fields.forEach((field: string) => {
+    HALF_TRADE_FIELDS.forEach((field: string) => {
       if (!!halfTrade[field]) {
         // console.log(halfTrade)
         ins.push(st(sub, ns.halftrade(field), halfTrade[field], why))
@@ -112,9 +116,9 @@ export const MoneyPane = {
     if (!Array.isArray(halfTradeSubjects)) {
       halfTradeSubjects = [ halfTradeSubjects ]
     }
-    const listItems = halfTradeSubjects.map(sub => `<li>${sub.value}</li>`)
-    // const listItems = [JSON.stringify(halfTradeSubjects)]
-    listDiv.innerHTML = `<ul>\n${listItems.join('\n')}</ul>\n`
+    const halfTrades: HalfTrade[] = halfTradeSubjects.map(sub => new HalfTrade(sub, solidLogicSingleton.store))
+    console.log(solidLogicSingleton.store.each(halfTradeSubjects[0]))
+    listDiv.innerHTML = generateTable(halfTrades)
   },
   render: function (subject: string, context: { dom: HTMLDocument }, paneOptions: {}) {
     console.log('rendering')
