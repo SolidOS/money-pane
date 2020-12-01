@@ -36,19 +36,24 @@ async function importCsvFile(text: string, graphStr: string): Promise<void> {
   halfTrades.forEach(halfTrade => {
     str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
     // console.log(halfTrade)
-    const sub = namedNode(new URL(`#${uuidv4()}`, graphStr).toString())
-    ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), why))
-    const fields = [ 'date', 'from', 'to', 'amount', 'unit', 'impliedBy', 'description' ]
-    fields.forEach((field: string) => {
-      if (!!halfTrade[field]) {
-        // console.log(halfTrade)
-        ins.push(st(sub, ns.halftrade(field), halfTrade[field], why))
-      }
-    })
+    // const sub = namedNode(new URL(`#${uuidv4()}`, graphStr).toString())
+    // ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), why))
+    // const fields = [ 'date', 'from', 'to', 'amount', 'unit', 'impliedBy', 'description' ]
+    // fields.forEach((field: string) => {
+    //   if (!!halfTrade[field]) {
+    //     // console.log(halfTrade)
+    //     ins.push(st(sub, ns.halftrade(field), halfTrade[field], why))
+    //   }
+    // })
   })
   console.log(`Imported ${ins.length} triples, patching your ledger`)
-  await solidLogicSingleton.updatePromise([], ins)
+  // await solidLogicSingleton.updatePromise([], ins)
   console.log('done')
+}
+
+function displayLedger(node) {
+  console.log("ploading")
+  solidLogicSingleton.load(node);
 }
 
 export const MoneyPane = {
@@ -120,11 +125,17 @@ export const MoneyPane = {
         window.alert('hm');
       }
     })
-    console.log('finding ledgers')
-    findLedgers().then((ledgers) => {
-      console.log({ ledgers })
-    })
-    paneDiv.innerHTML='<h2>under construction</h2><p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>'
+    
+    // console.log('finding ledgers')
+    // findLedgers().then(async (ledgers) => {
+    //   await solidLogicSingleton.load(ledgers.instances);
+    //   const ledgerList = ledgers.instances.map(node => `<li>${displayLedger(node)}</li>`);
+    //   console.log({ ledgers })
+    //   listDiv.innerHTML = `<ul>${ledgerList.join('\n')}</ul>`
+    // })
+    paneDiv.innerHTML='<h2>under construction</h2>' +
+      '<p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>' +
+      'Month: <input id="month" value="11"> Year: <input id="year" value="2020"><input type="submit" value="Analyze" onclick="analyze()">'
     paneDiv.appendChild(uploadButton)
     paneDiv.appendChild(listDiv)
     console.log('returning paneDiv')
