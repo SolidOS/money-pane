@@ -5,9 +5,10 @@
 
 import { v4 as uuidv4 } from 'uuid'
 import { icons, ns, solidLogicSingleton, authn } from 'solid-ui'
-import { st, namedNode } from 'rdflib'
+import { st, namedNode, NamedNode } from 'rdflib'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
 import { parseAsnCsv } from './parsers/asnbank-csv'
+import { HalfTrade, HALF_TRADE_FIELDS } from './Ledger'
 
 ns.halftrade = (label: string) => namedNode(`https://ledgerloops.com/vocab/halftrade#${label}`)
 ns.money = (tag: string) => namedNode(`https://example.com/#${tag}`) // @@TBD
@@ -18,13 +19,18 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
 function generateTable(halfTrades: HalfTrade[]) {
   let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
   halfTrades.forEach(halfTrade => {
-    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
+    str += `<tr><td>${halfTrade.date}</td>`
+      + `<td>${halfTrade.from}</td>`
+      + `<td>${halfTrade.to}</td>`
+      + `<td>${halfTrade.amount} ${halfTrade.unit}</td>`
+      + `<td>${halfTrade.description}</td></tr>\n`
   })
   return str + '</table>\n'
 }
 
-async function findLedgers() {
-  return authn.findAppInstances({}, ns.halftrade('Ledger'))
+async function findLedgers(): Promise<NamedNode[]> {
+  const context = await authn.findAppInstances({}, ns.halftrade('Ledger'))
+  return context.instances
 }
 
 async function importCsvFile(text: string, graphStr: string): Promise<void> { 
@@ -34,12 +40,12 @@ async function importCsvFile(text: string, graphStr: string): Promise<void> {
   const ins = []
   const why = namedNode(graphStr)
   halfTrades.forEach(halfTrade => {
-    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.fromId}</td><td>${halfTrade.toId}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
+    str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.from}</td><td>${halfTrade.to}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
     // console.log(halfTrade)
+
     // const sub = namedNode(new URL(`#${uuidv4()}`, graphStr).toString())
     // ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), why))
-    // const fields = [ 'date', 'from', 'to', 'amount', 'unit', 'impliedBy', 'description' ]
-    // fields.forEach((field: string) => {
+    // HALF_TRADE_FIELDS.forEach((field: string) => {
     //   if (!!halfTrade[field]) {
     //     // console.log(halfTrade)
     //     ins.push(st(sub, ns.halftrade(field), halfTrade[field], why))
@@ -107,7 +113,19 @@ export const MoneyPane = {
       )
     })
   },
-
+  kickOffAsyncRender: async function (listDiv: HTMLElement) {
+    listDiv.innerHTML = `<p>(finding HalfTrade ledgers on your pod...)</p>\n`
+    console.log('finding ledgers')
+    const ledgers = await findLedgers()
+    await solidLogicSingleton.load(ledgers)
+    let halfTradeSubjects = solidLogicSingleton.store.each(undefined, ns.rdf('type'), ns.halftrade('HalfTrade'))
+    if (!Array.isArray(halfTradeSubjects)) {
+      halfTradeSubjects = [ halfTradeSubjects ]
+    }
+    const halfTrades: HalfTrade[] = halfTradeSubjects.map(sub => new HalfTrade(sub, solidLogicSingleton.store))
+    console.log(solidLogicSingleton.store.each(halfTradeSubjects[0]))
+    listDiv.innerHTML = generateTable(halfTrades)
+  },
   render: function (subject: string, context: { dom: HTMLDocument }, paneOptions: {}) {
     console.log('rendering')
     const dom = context.dom
@@ -125,17 +143,10 @@ export const MoneyPane = {
         window.alert('hm');
       }
     })
-    
-    // console.log('finding ledgers')
-    // findLedgers().then(async (ledgers) => {
-    //   await solidLogicSingleton.load(ledgers.instances);
-    //   const ledgerList = ledgers.instances.map(node => `<li>${displayLedger(node)}</li>`);
-    //   console.log({ ledgers })
-    //   listDiv.innerHTML = `<ul>${ledgerList.join('\n')}</ul>`
-    // })
+    // void this.kickOffAsyncRender(listDiv)
     paneDiv.innerHTML='<h2>under construction</h2>' +
-      '<p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>' +
-      'Month: <input id="month" value="11"> Year: <input id="year" value="2020"><input type="submit" value="Analyze" onclick="analyze()">'
+     '<p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>' +
+     'Month: <input id="month" value="11"> Year: <input id="year" value="2020"><input type="submit" value="Analyze" onclick="analyze()">'
     paneDiv.appendChild(uploadButton)
     paneDiv.appendChild(listDiv)
     console.log('returning paneDiv')

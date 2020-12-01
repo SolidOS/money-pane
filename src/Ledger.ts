@@ -1,17 +1,40 @@
+import { IndexedFormula, namedNode, NamedNode } from 'rdflib'
+import { ns } from 'solid-ui'
+
+ns.halftrade = (label: string) => namedNode(`https://ledgerloops.com/vocab/halftrade#${label}`)
+ns.money = (tag: string) => namedNode(`https://example.com/#${tag}`) // @@TBD
+
+export const HALF_TRADE_FIELDS = [
+  'date',
+  'from',
+  'to',
+  'amount',
+  'unit',
+  'impliedBy',
+  'description'
+];
+
 export class HalfTrade {
-  date: Date;
-  fromId: string;
-  toId: string;
-  halfTradeId: string;
-  amount: number;
-  unit: string;
-  description: string;
-  saveTo(store: IndexedFormula, baseUrl: string) {
-    const dayLog = `${baseUrl}${this.date.getUTCFullYear()}/${this.date.getUTCMonth()}/${this.date.getUTCDay()}/`
-    const uri = `${dayLog}/${this.fromId}/${this.toId}#halfTradeId`
-    store.add(
-      new store.blankNode()
-    )
+  uri: NamedNode
+  date: Date
+  from: string
+  to: string
+  halfTradeId: string
+  amount: number
+  unit: string
+  description: string
+  constructor(uri: NamedNode, kb: IndexedFormula) {
+    this.uri = uri
+    HALF_TRADE_FIELDS.forEach((field: string) => {
+      const pred = ns.halftrade(field)
+      console.log('Finding', uri, pred, uri.doc())
+      this[field]
+      const node = kb.any(uri, pred, undefined, uri.doc())
+      if (node) {
+        this[field] = node.value
+      }
+    })
+    console.log('constructed', this)
   }
 }
 

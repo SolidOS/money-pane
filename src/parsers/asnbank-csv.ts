@@ -26,8 +26,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       })
       return [
         {
-          fromId: shop.id,
-          toId: 'me',
+          from: shop.id,
+          to: 'me',
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatieMutatie,
@@ -35,8 +35,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
         },
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: shop.id,
+          from: obj.opdrachtgeversrekening,
+          to: shop.id,
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatieMutatie,
@@ -49,8 +49,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       // FIXME: hard to interpret this
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: 'abroad',
+          from: obj.opdrachtgeversrekening,
+          to: 'abroad',
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatieMutatie,
@@ -69,8 +69,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       // FIXME: hard to interpret this
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: 'unknown',
+          from: obj.opdrachtgeversrekening,
+          to: 'unknown',
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatieMutatie,
@@ -84,8 +84,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
         const shop = new Shop({ name: 'ASN Bank', city: '', mcc: 0 })
         return [
           {
-            fromId: shop.id,
-            toId: 'me',
+            from: shop.id,
+            to: 'me',
             date: new Date(obj.boekingsdatum),
             amount: -parseFloat(obj.transactiebedrag),
             unit: obj.valutasoortMutatieMutatie,
@@ -93,8 +93,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
             description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
           },
           {
-            fromId: obj.opdrachtgeversrekening,
-            toId: shop.id,
+            from: obj.opdrachtgeversrekening,
+            to: shop.id,
             date: new Date(obj.boekingsdatum),
             amount: -parseFloat(obj.transactiebedrag),
             unit: obj.valutasoortMutatieMutatie,
@@ -109,8 +109,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       // FIXME: hard to interpret this
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: 'unknown',
+          from: obj.opdrachtgeversrekening,
+          to: 'unknown',
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatieMutatie,
@@ -128,8 +128,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
     case 'GEA': { // Geldautomaat
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: 'cash',
+          from: obj.opdrachtgeversrekening,
+          to: 'cash',
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -156,8 +156,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       })
       return [
         {
-          fromId: service,
-          toId: 'me',
+          from: service,
+          to: 'me',
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -165,8 +165,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
         },
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: service,
+          from: obj.opdrachtgeversrekening,
+          to: service,
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -179,8 +179,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       // FIXME: this transfer probably implies a purchase of some goods or services
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: obj.tegenrekeningnummer,
+          from: obj.opdrachtgeversrekening,
+          to: obj.tegenrekeningnummer,
           date: new Date(obj.boekingsdatum),
           amount: parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -195,8 +195,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
     case 'IOB': { // Interne Overboeking
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: obj.tegenrekeningnummer,
+          from: obj.opdrachtgeversrekening,
+          to: obj.tegenrekeningnummer,
           date: new Date(obj.boekingsdatum),
           amount: parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -215,8 +215,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       const shop = new Shop({ name: 'ASN Bank', city: '', mcc: 0 })
       return [
         {
-          fromId: shop.id,
-          toId: 'me',
+          from: shop.id,
+          to: 'me',
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -224,8 +224,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
         },
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: shop.id,
+          from: obj.opdrachtgeversrekening,
+          to: shop.id,
           date: new Date(obj.boekingsdatum),
           amount: -parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -237,8 +237,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
     case 'OVB': { // Overboeking
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: obj.tegenrekeningnummer,
+          from: obj.opdrachtgeversrekening,
+          to: obj.tegenrekeningnummer,
           date: new Date(obj.boekingsdatum),
           amount: parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
@@ -258,8 +258,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
         const shop = new Shop({ name: 'ASN Bank', city: '', mcc: 0 })
         return [
           {
-            fromId: shop.id,
-            toId: 'me',
+            from: shop.id,
+            to: 'me',
             date: new Date(obj.boekingsdatum),
             amount: -parseFloat(obj.transactiebedrag),
             unit: obj.valutasoortMutatie,
@@ -267,8 +267,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
             description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
           },
           {
-            fromId: obj.opdrachtgeversrekening,
-            toId: shop.id,
+            from: obj.opdrachtgeversrekening,
+            to: shop.id,
             date: new Date(obj.boekingsdatum),
             amount: -parseFloat(obj.transactiebedrag),
             unit: obj.valutasoortMutatie,
@@ -285,8 +285,8 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       // then the purchase should also be undone
       return [
         {
-          fromId: obj.opdrachtgeversrekening,
-          toId: obj.tegenrekeningnummer,
+          from: obj.opdrachtgeversrekening,
+          to: obj.tegenrekeningnummer,
           date: new Date(obj.boekingsdatum),
           amount: parseFloat(obj.transactiebedrag),
           unit: obj.valutasoortMutatie,
