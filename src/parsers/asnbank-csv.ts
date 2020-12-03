@@ -10,7 +10,26 @@ function capitalize(str) {
   return truncated.split(' ').map(x => x[0] + x.substring(1).toLowerCase()).join(' ')
 }
 
-function parseAsnBankTransaction (obj): HalfTrade[] {
+
+// The ledger between 'me' and the specific ASN Bank account number
+// should be an almost exact transaction-by-transaction copy of what was imported.
+// It should be robust to re-import and contain the exact text of the import line.
+// The HalfTrade from the bank to the shop is implied
+// As is the HalfTrade from the shop to the budget
+
+function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
+  console.log('parsing', obj)
+  return [
+    {
+      from: bankAccountNumber,
+      to: 'me',
+      date: new Date(obj.boekingsdatum),
+      amount: parseFloat(obj.transactiebedrag),
+      unit: obj.valutasoortMutatieMutatie,
+      halfTradeId: `imported-from-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+      description: obj.omschrijving
+    }
+  ]
   switch (obj.globaleTransactiecode) {
     case 'ACC': // Acceptgirobetaling AF Afboeking
       console.log(obj)
@@ -363,8 +382,8 @@ export function csvFileNameToData(fileName: string) {
   }
 }
 
-export function parseAsnCsv(csv: string): HalfTrade[] {
+export function parseAsnCsv(csv: string, iban: string): HalfTrade[] {
   return parseCsv(csv, ASN_BANK_CSV_COLUMNS)
-    .map(parseAsnBankTransaction)
+    .map(parseAsnBankTransaction, iban)
     .reduce((acc: HalfTrade[], val: HalfTrade[]): HalfTrade[] => acc.concat(val), []); // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
 }
