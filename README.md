@@ -5,6 +5,12 @@ Solid-compatible personal finance insight applet for solid-panes framework
 You can build with `npm install && npm run build && cd dist && npx serve`.
 You can debug with VSCode + Chrome (see `.vscode/launch.json`).
 
+## Issue Tracker
+
+We're using the Solid OS native Issue Tracker for this project! \o/
+*
+[MoneyPane issue tracker](https://solidos.solidcommunity.net/Team/2021/money-pane-project/money%20pane/index.ttl#this)
+
 ## Import transaction statements from your bank
 
 Currently supported csv-file formats:

@@ -13,7 +13,10 @@ module.exports = [{
     new HtmlWebpackPlugin({ template: './src/index.html' })
   ],
   resolve: {
-    extensions: ['.mjs', '.js', '.ts']
+    extensions: ['.mjs', '.js', '.ts'],
+    fallback: {
+      path: require.resolve('path-browserify')
+    }
   },
   module: {
     rules: [
@@ -48,7 +51,10 @@ module.exports = [{
     filename: 'moneyPane.js'
   },
   resolve: {
-    extensions: ['.mjs', '.js', '.ts']
+    extensions: ['.mjs', '.js', '.ts'],
+    fallback: {
+      path: require.resolve('path-browserify')
+    }
   },
   module: {
     rules: [
