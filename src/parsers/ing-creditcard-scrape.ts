@@ -35,7 +35,7 @@ function toEnglish(dateStr) {
 }
 
 function parseLines(lines) {
-  console.log('parsing lines', lines);
+  // console.log('parsing lines', lines);
   let year = '2021';
   let date = new Date();
   let cursor = 14;

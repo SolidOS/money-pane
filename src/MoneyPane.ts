@@ -33,6 +33,7 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
   console.log({ month, year, monthStart, monthEnd, forMonth });
   document.getElementById('list').innerHTML = generateTable(forMonth)
 }
+;(window as any).halfTrades = [];
 ;(window as any).importBankStatement = async function() {
   const filepath = document.getElementById('filepath').getAttribute('value')
   const format = document.getElementById('format').getAttribute('value')
@@ -40,19 +41,19 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
   const text = await fetchResult.text()
   let halfTrades: HalfTrade[]
   if (format === 'asn') {
-    halfTrades = importAsnCsv(text, filepath);
+    ;(window as any).halfTrades = (window as any).halfTrades.concat(importAsnCsv(text, filepath));
   } else if (format === 'ing') {
-    halfTrades = importIngCsv(text, filepath);
+    ;(window as any).halfTrades = (window as any).halfTrades.concat(importIngCsv(text, filepath));
   } else if (format === 'ing-cc-scrape') {
-    halfTrades = importIngCcScrape(text, filepath);
+    ;(window as any).halfTrades = (window as any).halfTrades.concat(importIngCcScrape(text, filepath));
   } else if (format === 'paypal') {
-    halfTrades = importPaypalCsv(text, filepath);
+    ;(window as any).halfTrades = (window as any).halfTrades.concat(importPaypalCsv(text, filepath));
   } else if (format === 'wiebetaaltwat-scrape') {
-    halfTrades = importWiebetaaltwatScrape(text, filepath);
+    ;(window as any).halfTrades = (window as any).halfTrades.concat(importWiebetaaltwatScrape(text, filepath));
   } else {
     throw new Error('Format not recognized')
   }
-  console.log(halfTrades)
+  console.log('window.halfTrades.length', (window as any).halfTrades.length)
 }
 
 function generateTable(halfTrades: HalfTrade[]) {

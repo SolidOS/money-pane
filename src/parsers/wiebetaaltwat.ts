@@ -20,7 +20,7 @@ function parseWbwToParts(amount, tos) {
   Object.keys(parts).forEach(name => {
     parts[name] = parts[name] * factor;
   });
-  console.log('parsed', parts);
+  // console.log('parsed', parts);
   return parts;
 }
 
@@ -41,7 +41,7 @@ function parseWbwTo(amount, tos) {
     }
   });
   const restPart = (amount - spent) / (tos.length - Object.keys(entries).length);
-  console.log({ restPart, amount, spent, tos, entries });
+  // console.log({ restPart, amount, spent, tos, entries });
   // pass 2
   tos.forEach(to => {
     const parts = to.split(' ');
@@ -49,7 +49,7 @@ function parseWbwTo(amount, tos) {
       entries[parts[0]] = restPart;
     }
   });
-  console.log('parsed', entries);
+  // console.log('parsed', entries);
   return entries;
 }
 
