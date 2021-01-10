@@ -15,7 +15,8 @@ export const HALF_TRADE_FIELDS = [
 ];
 
 export class HalfTrade {
-  uri: NamedNode
+  uri?: NamedNode
+  expenseCategory?: string
   date: Date
   from: string
   to: string
