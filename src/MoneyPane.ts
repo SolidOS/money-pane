@@ -7,8 +7,12 @@ import { v4 as uuidv4 } from 'uuid'
 import { icons, ns, solidLogicSingleton, authn } from 'solid-ui'
 import { st, namedNode, NamedNode } from 'rdflib'
 import { fileUploadButtonDiv } from 'solid-ui/lib/widgets/buttons'
-import { csvFileNameToData, parseAsnCsv } from './parsers/asnbank-csv'
+import { importAsnCsv, parseAsnCsv } from './parsers/asnbank-csv'
 import { HalfTrade, HALF_TRADE_FIELDS } from './Ledger'
+import { importIngCsv } from './parsers/ingbank-csv'
+import { importIngCcScrape } from './parsers/ing-creditcard-scrape'
+import { importPaypalCsv } from './parsers/paypal-csv'
+import { importWiebetaaltwatScrape } from './parsers/wiebetaaltwat'
 
 ns.halftrade = (label: string) => namedNode(`https://ledgerloops.com/vocab/halftrade#${label}`)
 ns.money = (tag: string) => namedNode(`https://example.com/#${tag}`) // @@TBD
@@ -16,16 +20,65 @@ ns.money = (tag: string) => namedNode(`https://example.com/#${tag}`) // @@TBD
 const mainClass = ns.halftrade('Ledger')
 const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
 
+;(window as any).analyze = function() {
+  const month = document.getElementById('month').getAttribute('value')
+  const year = document.getElementById('year').getAttribute('value')
+  const monthStart = new Date(`${month}-1-${year}`)
+  const monthEnd = (month === '12' ? new Date(`1-1-${parseInt(year) + 1}`) : new Date(`${parseInt(month) + 1}-1-${year}`))
+  if (!Array.isArray((window as any).halfTrades)) {
+    console.error('Please upload a csv file first');
+    (window as any).halfTrades = [];
+  }
+  const forMonth = (window as any).halfTrades.filter(x => x.date >= monthStart && x.date < monthEnd)
+  console.log({ month, year, monthStart, monthEnd, forMonth });
+  document.getElementById('list').innerHTML = generateTable(forMonth)
+}
+;(window as any).importBankStatement = async function() {
+  const filepath = document.getElementById('filepath').getAttribute('value')
+  const format = document.getElementById('format').getAttribute('value')
+  const fetchResult = await (window as any).SolidAuthClient.fetch(filepath)
+  const text = await fetchResult.text()
+  if (format === 'asn') {
+    importAsnCsv(text, filepath);
+  } else if (format === 'ing') {
+    importIngCsv(text, filepath);
+  } else if (format === 'ing-cc-scrape') {
+    importIngCcScrape(text, filepath);
+  } else if (format === 'paypal') {
+    importPaypalCsv(text, filepath);
+  } else if (format === 'wiebetaaltwat-scrape') {
+    importWiebetaaltwatScrape(text, filepath);
+  } else {
+    throw new Error('Format not recognized')
+  }
+}
+
 function generateTable(halfTrades: HalfTrade[]) {
-  let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
+  console.log(`Generating table from ${halfTrades.length} HalfTrades`);
+  // let str = '<p><ul>';
+  // Object.keys(totals).forEach(key => {
+  //   str += `<li>${key}: ${totals[key]} EUR</li>`;
+  // });
+  // document.write(str + '<ul></p>');
+  let str = {}
+  let totals = {}
   halfTrades.forEach(halfTrade => {
-    str += `<tr><td>${halfTrade.date}</td>`
+    if(!halfTrade.expenseCategory) {
+      return
+    }
+    if (!str[halfTrade.expenseCategory]) {
+      str[halfTrade.expenseCategory] = '<table><tr><td>Date</td><td>Category</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
+      totals[halfTrade.expenseCategory] = 0
+    }
+    str[halfTrade.expenseCategory] += `<tr><td>${halfTrade.date}</td>`
+      + `<td>${halfTrade.expenseCategory}</td>`
       + `<td>${halfTrade.from}</td>`
       + `<td>${halfTrade.to}</td>`
       + `<td>${halfTrade.amount} ${halfTrade.unit}</td>`
       + `<td>${halfTrade.description}</td></tr>\n`
+    totals[halfTrade.expenseCategory] += halfTrade.amount
   })
-  return str + '</table>\n'
+  return Object.keys(str).map(key => `<h2>${key} (${totals[key]})</h2>${str[key]}</table>\n`).join('\n')
 }
 
 async function findLedgers(): Promise<NamedNode[]> {
@@ -33,28 +86,30 @@ async function findLedgers(): Promise<NamedNode[]> {
   return context.instances
 }
 
-async function importCsvFile(text: string, iban: string, graphStr: string): Promise<void> { 
-  let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
+async function importCsvFile(text: string, graphStr: string): Promise<void> { 
+  // let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
   // TODO: Support more banks than just ASN Bank
-  const halfTrades = parseAsnCsv(text, iban)
-  console.log(halfTrades)
-  const ins = []
-  const why = namedNode(graphStr)
-  halfTrades.forEach(halfTrade => {
+  const halfTrades = parseAsnCsv(text)
+  console.log({ halfTrades })
+  ;(window as any).halfTrades = halfTrades
+  // FIXME: Store these in rdflib
+  // const ins = []
+  // const why = namedNode(graphStr)
+  // halfTrades.forEach(halfTrade => {
     // str += `<tr><td>${halfTrade.date}</td><td>${halfTrade.from}</td><td>${halfTrade.to}</td><td>${halfTrade.amount} ${halfTrade.unit}</td><td>${halfTrade.description}</td></tr>\n`
-    console.log(halfTrade)
+    // console.log(halfTrade)
 
-    const sub = namedNode(new URL(`#${uuidv4()}`, graphStr).toString())
-    solidLogicSingleton.store.add(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), why)
-    HALF_TRADE_FIELDS.forEach((field: string) => {
-      if (!!halfTrade[field]) {
-        // console.log(halfTrade)
-        solidLogicSingleton.store.add(sub, ns.halftrade(field), halfTrade[field], why)
-      }
-    })
-  })
+    // const sub = namedNode(new URL(`#${uuidv4()}`, graphStr).toString())
+    // ins.push(st(sub, ns.rdf('type'), ns.halftrade('HalfTrade'), why))
+    // HALF_TRADE_FIELDS.forEach((field: string) => {
+    //   if (!!halfTrade[field]) {
+    //     // console.log(halfTrade)
+    //     ins.push(st(sub, ns.halftrade(field), halfTrade[field], why))
+    //   }
+    // })
+  // })
   // console.log(`Imported ${ins.length} triples, patching your ledger`)
-  await solidLogicSingleton.store.fetcher.putBack(why)
+  // await solidLogicSingleton.updatePromise([], ins)
   console.log('done')
 }
 
@@ -133,22 +188,25 @@ export const MoneyPane = {
     // const kb = context.session.store
     const paneDiv = dom.createElement('div')
     const listDiv = dom.createElement('div')
+    listDiv.setAttribute('id', 'list')
     const uploadButton = fileUploadButtonDiv(document, (files) => {
       if (files.length === 1) {
         const reader = new FileReader();
         reader.addEventListener('load', (event) => {
-          const { iban } = csvFileNameToData(files[0].name);
-          importCsvFile(event.target.result.toString(), iban, subject);
+          importCsvFile(event.target.result.toString(), subject);
         });
         reader.readAsText(files[0]);
       } else {
         window.alert('hm');
       }
     })
-    void this.kickOffAsyncRender(listDiv)
+    // void this.kickOffAsyncRender(listDiv)
     paneDiv.innerHTML='<h2>under construction</h2>' +
-     '<p>Upload a .csv file from your bank. Currently only <a href="https://asnbank.nl">ASN Bank</a>\'s csv format is supported.</p>' +
-     'Month: <input id="month" value="11"> Year: <input id="year" value="2020"><input type="submit" value="Analyze" onclick="analyze()">'
+     '<p>Upload a .csv file from your bank by drag=dropping it onto the green "+" somewhere on your pod.</p>' +
+     '<p>Select a file and format to import.</p>' +
+     '<p>File: <input id="filepath" value="">' +
+     'Format: <input id="format" value="asn"><input type="submit" value="Import" onclick="importBankStatement()"></p>' +
+     '<p>Month: <input id="month" value="12"> Year: <input id="year" value="2020"><input type="submit" value="Analyze" onclick="analyze()"></p>'
     paneDiv.appendChild(uploadButton)
     paneDiv.appendChild(listDiv)
     console.log('returning paneDiv')

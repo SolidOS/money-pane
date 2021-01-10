@@ -10,26 +10,72 @@ function capitalize(str) {
   return truncated.split(' ').map(x => x[0] + x.substring(1).toLowerCase()).join(' ')
 }
 
+const categories = {
+  mcc: {
+  },
+  incassant: {
+  },
+  iban: {
+  },
+  description: {
+  }
+};
 
-// The ledger between 'me' and the specific ASN Bank account number
-// should be an almost exact transaction-by-transaction copy of what was imported.
-// It should be robust to re-import and contain the exact text of the import line.
-// The HalfTrade from the bank to the shop is implied
-// As is the HalfTrade from the shop to the budget
+const budget = {
+}
 
-function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
-  console.log('parsing', obj)
-  return [
-    {
-      from: bankAccountNumber,
-      to: 'me',
-      date: new Date(obj.boekingsdatum),
-      amount: parseFloat(obj.transactiebedrag),
-      unit: obj.valutasoortMutatieMutatie,
-      halfTradeId: `imported-from-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-      description: obj.omschrijving
+function mccToCategory(mcc: string) {
+  // See https://www.citibank.com/tts/solutions/commercial-cards/assets/docs/govt/Merchant-Category-Codes.pdf
+  if (categories.mcc[mcc]) {
+    return categories.mcc[mcc]
+  }   
+  return `MCC-${mcc}`
+}
+
+function incassantToCategory(incassantId: string) {
+  if (categories.incassant[incassantId]) {
+    return categories.incassant[incassantId]
+  }
+  return `INCASSANT-${incassantId}`
+}
+
+function ibanToCategory(tegenrekening: string, omschrijving: string) {
+  if (categories.iban[tegenrekening]) {
+    if (categories.iban[tegenrekening] === 'Unknown') {
+      const strings = categories.description;
+      let ret = 'Unknown';
+      Object.keys(strings).forEach(str => {
+        if (omschrijving.indexOf(str) !== -1) {
+          ret = strings[str];
+        }
+      });
+      return ret;
     }
-  ]
+    return categories.iban[tegenrekening];
+  }
+  return `iban-${tegenrekening}`
+}
+
+function toDate(str) {
+  const parts = str.split('-') // e.g. '23-11-2020'
+  const americanDate = `${parts[1]}-${parts[0]}=${parts[2]}` // e.g. '11-23-2020'
+  return new Date(`${parts[1]}-${parts[0]}=${parts[2]}`)
+}
+
+function parseAsnBankTransaction (obj): HalfTrade[] {
+  // totals.check += parseFloat(obj.transactiebedrag)
+  // console.log('parsing', obj)
+  // let expenseCategory
+  // let amount
+  // function countAs(category: string, setAmount: number) {
+  //   expenseCategory = category
+  //   amount = setAmount
+  //   if (!totals[expenseCategory]) {
+  //     totals[expenseCategory] = 0
+  //   }
+  //   totals[expenseCategory] += amount
+  //   totals.grand += amount
+  // }
   switch (obj.globaleTransactiecode) {
     case 'ACC': // Acceptgirobetaling AF Afboeking
       console.log(obj)
@@ -43,38 +89,43 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
         city: capitalize(obj.omschrijving[24] + obj.omschrijving.substring(25, 33)),
         mcc: obj.omschrijving.substring(69).split(' ')[0]
       })
+      const expenseCategory = mccToCategory(shop.mcc);
+      const amount =  -parseFloat(obj.transactiebedrag);
       return [
         {
           from: shop.id,
-          to: 'me',
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         },
         {
           from: obj.opdrachtgeversrekening,
           to: shop.id,
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
     case 'BTL': { // Buitenlandse Overboeking
+      const expenseCategory = ibanToCategory(obj.tegenrekeningnummer, obj.omschrijving);
+      const amount = -parseFloat(obj.transactiebedrag);
+
       // FIXME: hard to interpret this
       return [
         {
           from: obj.opdrachtgeversrekening,
-          to: 'abroad',
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
@@ -86,39 +137,43 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
       throw new Error(`Please implement parseAsnBankTransaction for globale transactiecode ${obj.globaleTransactiecode}`)
     case 'COR': { // Correctie
       // FIXME: hard to interpret this
+      const expenseCategory = 'Unknown';
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
         {
           from: obj.opdrachtgeversrekening,
-          to: 'unknown',
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
     case 'DIV': { // Diversen
-      if (obj.omschrijving === "'Kosten gebruik betaalrekening inclusief 1 betaalpas'") {
+      if (obj.omschrijving.startsWith("'Kosten gebruik")) {
         const shop = new Shop({ name: 'ASN Bank', city: '', mcc: 0 })
+        const expenseCategory = 'Services';
+        const amount = -parseFloat(obj.transactiebedrag);
         return [
           {
             from: shop.id,
-            to: 'me',
-            date: new Date(obj.boekingsdatum),
-            amount: -parseFloat(obj.transactiebedrag),
+            to: expenseCategory,
+            date: toDate(obj.boekingsdatum),
+            amount,
             unit: obj.valutasoortMutatieMutatie,
             halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
+            description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
           },
           {
             from: obj.opdrachtgeversrekening,
             to: shop.id,
-            date: new Date(obj.boekingsdatum),
-            amount: -parseFloat(obj.transactiebedrag),
+            date: toDate(obj.boekingsdatum),
+            amount,
             unit: obj.valutasoortMutatieMutatie,
             halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `${obj.globaleTransactiecode} transaction`
+            description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
           }
         ]
       }
@@ -126,15 +181,17 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
         return []
       }
       // FIXME: hard to interpret this
+      const expenseCategory = 'Unknown';
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
         {
           from: obj.opdrachtgeversrekening,
-          to: 'unknown',
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
@@ -145,15 +202,18 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
       console.log(obj)
       throw new Error(`Please implement parseAsnBankTransaction for globale transactiecode ${obj.globaleTransactiecode}`)
     case 'GEA': { // Geldautomaat
+      const expenseCategory = 'Cash';
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
         {
+          expenseCategory,
           from: obj.opdrachtgeversrekening,
           to: 'cash',
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
@@ -168,43 +228,56 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
       // console.log(obj.omschrijving, matches)
       const [ dummy, service, incassantId, kenmerkMachtiging ] = matches
       const purchase = new SettledPurchase({
-        date: new Date(obj.boekingsdatum),
+        date: toDate(obj.boekingsdatum),
         shopId: incassantId,
         amount: -parseFloat(obj.transactiebedrag),
         settlementTransactionId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`
       })
+      const expenseCategory = incassantToCategory(incassantId);
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
         {
           from: service,
-          to: 'me',
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         },
         {
           from: obj.opdrachtgeversrekening,
           to: service,
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
   }
     case 'IDB': { // iDEAL betaling
       // FIXME: this transfer probably implies a purchase of some goods or services
+      const expenseCategory = ibanToCategory(obj.tegenrekeningnummer, obj.omschrijving);
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
+        {
+          from: obj.tegenrekeningnummer,
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
+          unit: obj.valutasoortMutatieMutatie,
+          halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
+        },
         {
           from: obj.opdrachtgeversrekening,
           to: obj.tegenrekeningnummer,
-          date: new Date(obj.boekingsdatum),
-          amount: parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
@@ -212,15 +285,26 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
       console.log(obj)
       throw new Error(`Please implement parseAsnBankTransaction for globale transactiecode ${obj.globaleTransactiecode}`)
     case 'IOB': { // Interne Overboeking
+      const expenseCategory = ibanToCategory(obj.tegenrekeningnummer, obj.omschrijving);
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
+        {
+          from: obj.tegenrekeningnummer,
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
+          unit: obj.valutasoortMutatieMutatie,
+          halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
+        },
         {
           from: obj.opdrachtgeversrekening,
           to: obj.tegenrekeningnummer,
-          date: new Date(obj.boekingsdatum),
-          amount: parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
@@ -231,38 +315,51 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
       console.log(obj)
       throw new Error(`Please implement parseAsnBankTransaction for globale transactiecode ${obj.globaleTransactiecode}`)
     case 'KST': { // Kosten/provisies
-      const shop = new Shop({ name: 'ASN Bank', city: '', mcc: 0 })
+      const shop = new Shop({ name: 'ASN Bank', city: '', mcc: '0' })
+      const expenseCategory = 'Services';
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
         {
           from: shop.id,
-          to: 'me',
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         },
         {
           from: obj.opdrachtgeversrekening,
           to: shop.id,
-          date: new Date(obj.boekingsdatum),
-          amount: -parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
     case 'OVB': { // Overboeking
+      const expenseCategory = ibanToCategory(obj.tegenrekeningnummer, obj.omschrijving);
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
+        {
+          from: obj.tegenrekeningnummer,
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
+          unit: obj.valutasoortMutatieMutatie,
+          halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
+        },
         {
           from: obj.opdrachtgeversrekening,
           to: obj.tegenrekeningnummer,
-          date: new Date(obj.boekingsdatum),
-          amount: parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
@@ -275,24 +372,26 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
     case 'RNT': { // Rente
       if (obj.omschrijving.startsWith("'DEBETRENTE") || obj.omschrijving.startsWith("'CREDITRENTE")) {
         const shop = new Shop({ name: 'ASN Bank', city: '', mcc: 0 })
+        const expenseCategory = 'Services';
+        const amount = -parseFloat(obj.transactiebedrag);
         return [
           {
             from: shop.id,
-            to: 'me',
-            date: new Date(obj.boekingsdatum),
-            amount: -parseFloat(obj.transactiebedrag),
+            to: expenseCategory,
+            date: toDate(obj.boekingsdatum),
+            amount,
             unit: obj.valutasoortMutatie,
             halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `Purchase implied by ${obj.globaleTransactiecode} transaction`
+            description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
           },
           {
             from: obj.opdrachtgeversrekening,
             to: shop.id,
-            date: new Date(obj.boekingsdatum),
+            date: toDate(obj.boekingsdatum),
             amount: -parseFloat(obj.transactiebedrag),
             unit: obj.valutasoortMutatie,
             halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `${obj.globaleTransactiecode} transaction`
+            description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
           }
         ]
         }
@@ -302,15 +401,26 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
     case 'STO': { // Storno
       // FIXME: if this undoes a transaction that implied a purchase,
       // then the purchase should also be undone
+      const expenseCategory = 'Storno';
+      const amount = -parseFloat(obj.transactiebedrag);
       return [
+        {
+          from: obj.tegenrekeningnummer,
+          to: expenseCategory,
+          date: toDate(obj.boekingsdatum),
+          amount,
+          unit: obj.valutasoortMutatieMutatie,
+          halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
+        },
         {
           from: obj.opdrachtgeversrekening,
           to: obj.tegenrekeningnummer,
-          date: new Date(obj.boekingsdatum),
-          amount: parseFloat(obj.transactiebedrag),
+          date: toDate(obj.boekingsdatum),
+          amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction`
+          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
         }
       ]
     }
@@ -323,7 +433,7 @@ function parseAsnBankTransaction (obj, bankAccountNumber): HalfTrade[] {
     }
 }
 
-// This type uses the exact names as documented in Dutch
+// This list uses the exact names as documented in Dutch
 // at https://www.asnbank.nl/web/file?uuid=fc28db9c-d91e-4a2c-bd3a-30cffb057e8b&owner=6916ad14-918d-4ea8-80ac-f71f0ff1928e&contentid=852
 const ASN_BANK_CSV_COLUMNS = [
   'boekingsdatum', // dd-mm-jjjj Dit veld geeft de datum weer waarop de transactie daadwerkelijk heeft plaatsgevonden. Voorbeeld: 3­4­2000
@@ -358,10 +468,13 @@ function parseCsv (csv: string, columnNames: string[]): { [fieldName: string]: s
   lines.map(line => line.split(','))
     .map(arr => {
       if (arr.length === columnNames.length) {
-        const obj = {}
+        const obj = {
+          fullInfo: ''
+        };
         for (let i=0; i < arr.length; i++) {
           // console.log(i, columnNames[i], arr[i])
-          obj[columnNames[i]] = arr[i]
+          obj[columnNames[i]] = arr[i];
+          obj.fullInfo += `${columnNames[i]}: ${arr[i]},`;
         }
         objs.push(obj)
       } else {
@@ -382,8 +495,16 @@ export function csvFileNameToData(fileName: string) {
   }
 }
 
-export function parseAsnCsv(csv: string, iban: string): HalfTrade[] {
-  return parseCsv(csv, ASN_BANK_CSV_COLUMNS)
-    .map(parseAsnBankTransaction, iban)
+export function parseAsnCsv(csv: string): HalfTrade[] {
+  const ret = parseCsv(csv, ASN_BANK_CSV_COLUMNS)
+    .map(parseAsnBankTransaction)
     .reduce((acc: HalfTrade[], val: HalfTrade[]): HalfTrade[] => acc.concat(val), []); // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
+  return ret
+}
+
+export function importAsnCsv(csv: string, filePath: string) {
+  const parts = filePath.split('/')
+  const fileName = parts[parts.length - 1]
+  csvFileNameToData(fileName)
+  parseAsnCsv(csv)
 }
