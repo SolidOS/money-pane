@@ -56,7 +56,7 @@ function ibanToCategory(tegenrekening: string, omschrijving: string) {
   return `iban-${tegenrekening}`
 }
 
-function toDate(str) {
+export function toDate(str) {
   const parts = str.split('-') // e.g. '23-11-2020'
   const americanDate = `${parts[1]}-${parts[0]}=${parts[2]}` // e.g. '11-23-2020'
   return new Date(`${parts[1]}-${parts[0]}=${parts[2]}`)
@@ -89,7 +89,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
         city: capitalize(obj.omschrijving[24] + obj.omschrijving.substring(25, 33)),
         mcc: obj.omschrijving.substring(69).split(' ')[0]
       })
-      const expenseCategory = mccToCategory(shop.mcc);
+      const expenseCategory = mccToCategory(shop.mcc.toString());
       const amount =  -parseFloat(obj.transactiebedrag);
       return [
         {
@@ -315,7 +315,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
       console.log(obj)
       throw new Error(`Please implement parseAsnBankTransaction for globale transactiecode ${obj.globaleTransactiecode}`)
     case 'KST': { // Kosten/provisies
-      const shop = new Shop({ name: 'ASN Bank', city: '', mcc: '0' })
+      const shop = new Shop({ name: 'ASN Bank', city: '', mcc: 0 })
       const expenseCategory = 'Services';
       const amount = -parseFloat(obj.transactiebedrag);
       return [
@@ -457,7 +457,7 @@ const ASN_BANK_CSV_COLUMNS = [
   'afschriftnummer', // N (3) Het nummer van het afschrift waar de betreffende boeking op staat vermeld. Voorbeeld: 42
 ]
 
-function parseCsv (csv: string, columnNames: string[]): { [fieldName: string]: string }[] {
+export function parseCsv (csv: string, columnNames: string[]): { [fieldName: string]: string }[] {
   const objs = []
   let lines = csv.split('\n')
   if (lines[lines.length - 1].length === 0) {
@@ -478,7 +478,7 @@ function parseCsv (csv: string, columnNames: string[]): { [fieldName: string]: s
         }
         objs.push(obj)
       } else {
-        console.warn(`Expected ${columnNames} columns but saw ${arr.length}:`)
+        console.warn(`Expected ${columnNames.length} columns but saw ${arr.length}:`)
         console.warn(arr)
       }
     })
@@ -502,9 +502,16 @@ export function parseAsnCsv(csv: string): HalfTrade[] {
   return ret
 }
 
-export function importAsnCsv(csv: string, filePath: string) {
-  const parts = filePath.split('/')
-  const fileName = parts[parts.length - 1]
-  csvFileNameToData(fileName)
-  parseAsnCsv(csv)
+export function importAsnCsv(csv: string, filePath: string): HalfTrade[] {
+  return parseCsv(csv, ASN_BANK_CSV_COLUMNS).map(obj => {
+    return {
+      from: obj.opdrachtgeversrekening,
+      to: obj.tegenrekeningnummer,
+      date: toDate(obj.boekingsdatum),
+      amount: -parseFloat(obj.transactiebedrag),
+      unit: obj.valutasoortMutatie,
+      halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+      description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
+    }
+  })
 }

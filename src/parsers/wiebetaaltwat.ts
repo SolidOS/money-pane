@@ -1,3 +1,7 @@
+import { v4 as uuidV4 } from 'uuid'
+import { HalfTrade } from '../Ledger';
+import { toDate } from "./asnbank-csv";
+
 function parseWbwToParts(amount, tos) {
   let total = 0;
   let parts = {};
@@ -72,9 +76,19 @@ function parseLines(lines) {
     }
     cursor += 6;
   } while(cursor < lines.length);
-  console.log(entries);
+  return entries;
 }
 
-export function importWiebetaaltwatScrape(text: string, filePath: string) {
-  
+export function importWiebetaaltwatScrape(text: string, filePath: string): HalfTrade[] {
+  return parseLines(text.split('\n')).map(obj => {
+    return {
+      from: obj.from,
+      to: obj.to,
+      date: toDate(obj.date),
+      amount: obj.amount,
+      unit: 'EUR',
+      halfTradeId: `wiebetaaltwat-${obj.date}-${obj.from}-${obj.to}-${uuidV4()}`,
+      description: obj.description
+    }
+  })
 }

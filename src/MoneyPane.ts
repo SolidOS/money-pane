@@ -38,19 +38,21 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
   const format = document.getElementById('format').getAttribute('value')
   const fetchResult = await (window as any).SolidAuthClient.fetch(filepath)
   const text = await fetchResult.text()
+  let halfTrades: HalfTrade[]
   if (format === 'asn') {
-    importAsnCsv(text, filepath);
+    halfTrades = importAsnCsv(text, filepath);
   } else if (format === 'ing') {
-    importIngCsv(text, filepath);
+    halfTrades = importIngCsv(text, filepath);
   } else if (format === 'ing-cc-scrape') {
-    importIngCcScrape(text, filepath);
+    halfTrades = importIngCcScrape(text, filepath);
   } else if (format === 'paypal') {
-    importPaypalCsv(text, filepath);
+    halfTrades = importPaypalCsv(text, filepath);
   } else if (format === 'wiebetaaltwat-scrape') {
-    importWiebetaaltwatScrape(text, filepath);
+    halfTrades = importWiebetaaltwatScrape(text, filepath);
   } else {
     throw new Error('Format not recognized')
   }
+  console.log(halfTrades)
 }
 
 function generateTable(halfTrades: HalfTrade[]) {

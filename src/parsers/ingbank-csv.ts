@@ -1,3 +1,6 @@
+import { HalfTrade } from "../Ledger";
+import { parseCsv, toDate } from "./asnbank-csv";
+
 // "Date";"Name / Description";"Account";"Counterparty";"Code";"Debit/credit";"Amount (EUR)";"Transaction type";"Notifications";"Resulting balance";"Tag"
 const ING_BANK_CSV_COLUMNS = [
   'Date',
@@ -14,7 +17,8 @@ const ING_BANK_CSV_COLUMNS = [
 ];
 
 function parseLines(lines) {
-  lines.forEach(line => {
+  const objects = [];
+  lines.map(line => {
     if (line === '') {
       return;
     }
@@ -26,10 +30,21 @@ function parseLines(lines) {
     for (let i=0; i< ING_BANK_CSV_COLUMNS.length; i++) {
       obj[ING_BANK_CSV_COLUMNS[i]] = cells[i];
     }
-    console.log(obj);
+    objects.push(obj);
   });
+  return objects;
 }
 
-export function importIngCsv(text: string, filePath: string) {
-  
+export function importIngCsv(text: string, filePath: string): HalfTrade[] {
+  return parseLines(text.split('\n')).map(obj => {
+    return {
+      from: obj.Account,
+      to: obj.Counterparty,
+      date: toDate(obj.Date),
+      amount: -parseFloat(obj['Amount (EUR)']),
+      unit: 'EUR',
+      halfTradeId: `ing-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+      description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
+    }
+  })
 }

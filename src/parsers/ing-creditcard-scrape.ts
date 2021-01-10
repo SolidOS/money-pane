@@ -1,3 +1,6 @@
+import { v4 as uuidV4 } from 'uuid'
+import { toDate } from './asnbank-csv';
+
 function isYear(str) {
   let asNumber = parseInt(str, 10);
   if (isNaN(asNumber)) {
@@ -32,6 +35,7 @@ function toEnglish(dateStr) {
 }
 
 function parseLines(lines) {
+  console.log('parsing lines', lines);
   let year = '2021';
   let date = new Date();
   let cursor = 14;
@@ -62,9 +66,19 @@ function parseLines(lines) {
     cursor++;
     entries.push({ description, date, amount });
   } while (cursor < lines.length);
-  console.log(entries);
+  return entries;
 }
 
 export function importIngCcScrape(text: string, filePath: string) {
-
+  return parseLines(text.split('\n')).map(obj => {
+    return {
+      from: 'ING Creditcard',
+      to: 'Counterparty',
+      date: obj.date,
+      amount: -parseFloat(obj.amount),
+      unit: 'EUR',
+      halfTradeId: `ing-bank-cc-${obj.date}-${uuidV4()}`,
+      description: obj.description
+    }
+  })
 }
