@@ -34,13 +34,14 @@ function toEnglish(dateStr) {
   return `${parts[0]} ${months[parts[1]]}`;
 }
 
-function parseLines(lines) {
+function parseLines(lines, scrapeFileUrl) {
   // console.log('parsing lines', lines);
   let year = '2021';
   let date = new Date();
   let cursor = 14;
   const entries = [];
   do {
+    const cursorStarted = cursor;
     if (lines[cursor].startsWith('Periode ')) {
       cursor += 9;
     }
@@ -64,13 +65,19 @@ function parseLines(lines) {
     cursor++;
     const amount = lines[cursor];
     cursor++;
-    entries.push({ description, date, amount });
+    entries.push({
+      description,
+      date,
+      amount,
+      fullInfo: lines.slice(cursorStarted, cursor),
+      impliedBy: `${scrapeFileUrl}#L${cursorStarted + 1}-L${cursor + 1}` // First line is line 1
+    });
   } while (cursor < lines.length);
   return entries;
 }
 
 export function importIngCcScrape(text: string, filePath: string) {
-  return parseLines(text.split('\n')).map(obj => {
+  return parseLines(text.split('\n'), filePath).map(obj => {
     return {
       from: 'ING Creditcard',
       to: 'Counterparty',

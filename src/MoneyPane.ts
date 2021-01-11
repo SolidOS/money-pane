@@ -97,7 +97,7 @@ async function findLedgers(): Promise<NamedNode[]> {
 async function importCsvFile(text: string, graphStr: string): Promise<void> { 
   // let str = '<table><tr><td>Date</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
   // TODO: Support more banks than just ASN Bank
-  const halfTrades = parseAsnCsv(text)
+  const halfTrades = parseAsnCsv(text, graphStr)
   console.log({ halfTrades })
   ;(window as any).halfTrades = halfTrades
   // FIXME: Store these in rdflib

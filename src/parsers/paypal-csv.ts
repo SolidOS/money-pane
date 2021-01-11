@@ -1,6 +1,6 @@
 import { v4 as uuidV4 } from 'uuid'
 import { HalfTrade } from "../Ledger";
-import { parseCsv, toDate } from "./asnbank-csv";
+import { toDate } from "./asnbank-csv";
 
 // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"
 const PAYPAL_CSV_COLUMNS = [
@@ -24,31 +24,35 @@ const PAYPAL_CSV_COLUMNS = [
   'Reference Txn ID'
 ];
 
-function parseLines(lines) {
+function parseLines(lines, csvUrl) {
   const objects = [];
-  lines.forEach(line => {
-    if (line === '') {
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i] === '') {
       return;
     }
-    const cells = line.substring(1, line.length - 1).split('","');
+    const cells = lines[i].substring(1, lines[i].length - 1).split('","');
     if (cells.length !== PAYPAL_CSV_COLUMNS.length) {
-      console.log(line);
+      console.log(lines[i]);
       console.log(cells);
       console.log(PAYPAL_CSV_COLUMNS);
       throw new Error(`Number of columns doesn\'t match! ${cells.length} != ${PAYPAL_CSV_COLUMNS.length}`);
     }
-    const obj = {};
+    const obj = {
+      fullInfo: '',
+      impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
+    };
     for (let i=0; i< PAYPAL_CSV_COLUMNS.length; i++) {
       obj[PAYPAL_CSV_COLUMNS[i]] = cells[i];
+      obj.fullInfo += `${PAYPAL_CSV_COLUMNS[i]}: ${cells[i]},`;
     }
     // console.log(obj);
     objects.push(obj);
-  });
+  }
   return objects
 }
 
 export function importPaypalCsv(text: string, filePath: string): HalfTrade[] {
-  return parseLines(text.split('\n')).map(obj => {
+  return parseLines(text.split('\n'), filePath).map(obj => {
     // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"
     if (parseFloat(obj.Bruto) > 0) {
       return {

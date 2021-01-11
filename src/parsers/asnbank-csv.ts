@@ -99,7 +99,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         },
@@ -110,7 +110,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -129,7 +129,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -153,7 +153,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -172,7 +172,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
             amount,
             unit: obj.valutasoortMutatieMutatie,
             halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+            description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
             impliedBy: obj.impliedBy,
             fullInfo: obj.fullInfo
           },
@@ -183,7 +183,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
             amount,
             unit: obj.valutasoortMutatieMutatie,
             halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+            description: `${obj.globaleTransactiecode} transaction`,
             impliedBy: obj.impliedBy,
             fullInfo: obj.fullInfo
           }
@@ -203,7 +203,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -226,7 +226,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -258,7 +258,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         },
@@ -269,7 +269,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -287,7 +287,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         },
@@ -298,7 +298,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -318,7 +318,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         },
@@ -329,7 +329,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -353,7 +353,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         },
@@ -364,7 +364,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -381,7 +381,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         },
@@ -392,7 +392,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -417,7 +417,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
             amount,
             unit: obj.valutasoortMutatie,
             halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+            description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
             impliedBy: obj.impliedBy,
             fullInfo: obj.fullInfo
           },
@@ -428,7 +428,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
             amount: -parseFloat(obj.transactiebedrag),
             unit: obj.valutasoortMutatie,
             halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-            description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+            description: `${obj.globaleTransactiecode} transaction`,
             impliedBy: obj.impliedBy,
             fullInfo: obj.fullInfo
           }
@@ -450,7 +450,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatieMutatie,
           halfTradeId: `purchase-implied-by-asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `Purchase implied by ${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `Purchase implied by ${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         },
@@ -461,7 +461,7 @@ function parseAsnBankTransaction (obj): HalfTrade[] {
           amount,
           unit: obj.valutasoortMutatie,
           halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-          description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+          description: `${obj.globaleTransactiecode} transaction`,
           impliedBy: obj.impliedBy,
           fullInfo: obj.fullInfo
         }
@@ -500,7 +500,7 @@ const ASN_BANK_CSV_COLUMNS = [
   'afschriftnummer', // N (3) Het nummer van het afschrift waar de betreffende boeking op staat vermeld. Voorbeeld: 42
 ]
 
-export function parseCsv (csv: string, columnNames: string[]): { [fieldName: string]: string }[] {
+function parseCsv (csv: string, columnNames: string[], csvUrl: string): { [fieldName: string]: string }[] {
   const objs = []
   let lines = csv.split('\n')
   if (lines[lines.length - 1].length === 0) {
@@ -508,23 +508,24 @@ export function parseCsv (csv: string, columnNames: string[]): { [fieldName: str
   } else {
     console.warn('Last line seems to be missing its newline at the end')
   }
-  lines.map(line => line.split(','))
-    .map(arr => {
-      if (arr.length === columnNames.length) {
-        const obj = {
-          fullInfo: ''
-        };
-        for (let i=0; i < arr.length; i++) {
-          // console.log(i, columnNames[i], arr[i])
-          obj[columnNames[i]] = arr[i];
-          obj.fullInfo += `${columnNames[i]}: ${arr[i]},`;
-        }
-        objs.push(obj)
-      } else {
-        console.warn(`Expected ${columnNames.length} columns but saw ${arr.length}:`)
-        console.warn(arr)
+  for (let i = 0; i < lines.length; i++) {
+    const arr = lines[i].split(',')
+    if (arr.length === columnNames.length) {
+      const obj = {
+        fullInfo: '',
+        impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
+      };
+      for (let i=0; i < arr.length; i++) {
+        // console.log(i, columnNames[i], arr[i])
+        obj[columnNames[i]] = arr[i];
+        obj.fullInfo += `${columnNames[i]}: ${arr[i]},`;
       }
-    })
+      objs.push(obj)
+    } else {
+      console.warn(`Expected ${columnNames.length} columns but saw ${arr.length}:`)
+      console.warn(arr)
+    }
+  }
   return objs
 }
 
@@ -538,15 +539,15 @@ export function csvFileNameToData(fileName: string) {
   }
 }
 
-export function parseAsnCsv(csv: string): HalfTrade[] {
-  const ret = parseCsv(csv, ASN_BANK_CSV_COLUMNS)
+export function parseAsnCsv(csv: string, csvUrl: string): HalfTrade[] {
+  const ret = parseCsv(csv, ASN_BANK_CSV_COLUMNS, csvUrl)
     .map(parseAsnBankTransaction)
     .reduce((acc: HalfTrade[], val: HalfTrade[]): HalfTrade[] => acc.concat(val), []); // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
   return ret
 }
 
 export function importAsnCsv(csv: string, filePath: string): HalfTrade[] {
-  return parseCsv(csv, ASN_BANK_CSV_COLUMNS).map(obj => {
+  return parseCsv(csv, ASN_BANK_CSV_COLUMNS, filePath).map(obj => {
     return {
       from: obj.opdrachtgeversrekening,
       to: obj.tegenrekeningnummer,
@@ -554,7 +555,7 @@ export function importAsnCsv(csv: string, filePath: string): HalfTrade[] {
       amount: -parseFloat(obj.transactiebedrag),
       unit: obj.valutasoortMutatie,
       halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-      description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+      description: `${obj.globaleTransactiecode} transaction`,
       impliedBy: obj.impliedBy,
       fullInfo: obj.fullInfo
     }

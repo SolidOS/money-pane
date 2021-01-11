@@ -53,7 +53,7 @@ function parseWbwTo(amount, tos) {
   return entries;
 }
 
-function parseLines(lines) {
+function parseLines(lines, scrapeFileUrl) {
   let cursor = 0;
   const entries = [];
   do {
@@ -67,6 +67,8 @@ function parseLines(lines) {
         to: name,
         amount: amounts[name],
         date: lines[cursor+3],
+        fullInfo: lines.slice(cursor, cursor + 6),
+        impliedBy: `${scrapeFileUrl}#L${cursor + 1}-L${cursor + 7}` // First line is line 1
       });
       sanityCheck += amounts[name];
     });
@@ -80,7 +82,7 @@ function parseLines(lines) {
 }
 
 export function importWiebetaaltwatScrape(text: string, filePath: string): HalfTrade[] {
-  return parseLines(text.split('\n')).map(obj => {
+  return parseLines(text.split('\n'), filePath).map(obj => {
     return {
       from: obj.from,
       to: obj.to,
