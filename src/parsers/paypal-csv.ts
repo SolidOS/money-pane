@@ -28,7 +28,7 @@ function parseLines(lines, csvUrl) {
   const objects = [];
   for (let i = 0; i < lines.length; i++) {
     if (lines[i] === '') {
-      return;
+      continue;
     }
     const cells = lines[i].substring(1, lines[i].length - 1).split('","');
     if (cells.length !== PAYPAL_CSV_COLUMNS.length) {

@@ -20,7 +20,7 @@ function parseLines(lines, csvUrl) {
   const objects = [];
   for (let i = 0; i < lines.length; i++) {
     if (lines[i] === '') {
-      return;
+      continue;
     }
     const cells = lines[i].split(';');
     if (cells.length !== ING_BANK_CSV_COLUMNS.length) {
