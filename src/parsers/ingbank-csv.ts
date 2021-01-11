@@ -44,7 +44,9 @@ export function importIngCsv(text: string, filePath: string): HalfTrade[] {
       amount: -parseFloat(obj['Amount (EUR)']),
       unit: 'EUR',
       halfTradeId: `ing-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-      description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`
+      description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+      impliedBy: obj.impliedBy,
+      fullInfo: obj.fullInfo
     }
   })
 }

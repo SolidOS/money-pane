@@ -56,6 +56,10 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
   console.log('window.halfTrades.length', (window as any).halfTrades.length)
 }
 
+function extractExpenseCategory(halfTrade: HalfTrade) {
+  return 'expenses';
+}
+
 function generateTable(halfTrades: HalfTrade[]) {
   console.log(`Generating table from ${halfTrades.length} HalfTrades`);
   // let str = '<p><ul>';
@@ -66,20 +70,21 @@ function generateTable(halfTrades: HalfTrade[]) {
   let str = {}
   let totals = {}
   halfTrades.forEach(halfTrade => {
-    if(!halfTrade.expenseCategory) {
+    const expenseCategory = extractExpenseCategory(halfTrade);
+    if(!expenseCategory) {
       return
     }
-    if (!str[halfTrade.expenseCategory]) {
-      str[halfTrade.expenseCategory] = '<table><tr><td>Date</td><td>Category</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
-      totals[halfTrade.expenseCategory] = 0
+    if (!str[expenseCategory]) {
+      str[expenseCategory] = '<table><tr><td>Date</td><td>Category</td><td>From</td><td>To</td><td>Amount</td><td>Description</td>\n'
+      totals[expenseCategory] = 0
     }
-    str[halfTrade.expenseCategory] += `<tr><td>${halfTrade.date}</td>`
-      + `<td>${halfTrade.expenseCategory}</td>`
+    str[expenseCategory] += `<tr><td>${halfTrade.date}</td>`
+      + `<td>${expenseCategory}</td>`
       + `<td>${halfTrade.from}</td>`
       + `<td>${halfTrade.to}</td>`
       + `<td>${halfTrade.amount} ${halfTrade.unit}</td>`
       + `<td>${halfTrade.description}</td></tr>\n`
-    totals[halfTrade.expenseCategory] += halfTrade.amount
+    totals[expenseCategory] += halfTrade.amount
   })
   return Object.keys(str).map(key => `<h2>${key} (${totals[key]})</h2>${str[key]}</table>\n`).join('\n')
 }
@@ -181,8 +186,8 @@ export const MoneyPane = {
     if (!Array.isArray(halfTradeSubjects)) {
       halfTradeSubjects = [ halfTradeSubjects ]
     }
-    const halfTrades: HalfTrade[] = halfTradeSubjects.map(sub => new HalfTrade(sub, solidLogicSingleton.store))
-    console.log(solidLogicSingleton.store.each(halfTradeSubjects[0]))
+    const halfTrades: HalfTrade[] = halfTradeSubjects.map(sub => new HalfTrade(sub as NamedNode, solidLogicSingleton.store))
+    console.log(solidLogicSingleton.store.each(halfTradeSubjects[0] as any))
     listDiv.innerHTML = generateTable(halfTrades)
   },
   render: function (subject: string, context: { dom: HTMLDocument }, paneOptions: {}) {

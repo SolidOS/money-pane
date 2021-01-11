@@ -58,7 +58,9 @@ export function importPaypalCsv(text: string, filePath: string): HalfTrade[] {
         amount: parseFloat(obj.Bruto),
         unit: obj.Valuta,
         halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
-        description: obj.Omschrijving
+        description: obj.Omschrijving,
+        impliedBy: obj.impliedBy,
+        fullInfo: obj.fullInfo
       }
     } else {
       return {
@@ -68,7 +70,9 @@ export function importPaypalCsv(text: string, filePath: string): HalfTrade[] {
         amount: -parseFloat(obj.Bruto),
         unit: obj.Valuta,
         halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
-        description: obj.Omschrijving
+        description: obj.Omschrijving,
+        impliedBy: obj.impliedBy,
+        fullInfo: obj.fullInfo
       }
     }
   })

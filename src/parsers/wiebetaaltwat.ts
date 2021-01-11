@@ -88,7 +88,9 @@ export function importWiebetaaltwatScrape(text: string, filePath: string): HalfT
       amount: obj.amount,
       unit: 'EUR',
       halfTradeId: `wiebetaaltwat-${obj.date}-${obj.from}-${obj.to}-${uuidV4()}`,
-      description: obj.description
+      description: obj.description,
+      impliedBy: obj.impliedBy,
+      fullInfo: obj.fullInfo
     }
   })
 }

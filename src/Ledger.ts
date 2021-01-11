@@ -11,19 +11,22 @@ export const HALF_TRADE_FIELDS = [
   'amount',
   'unit',
   'impliedBy',
-  'description'
+  'description',
+  'fullInfo'
 ];
 
 export class HalfTrade {
   uri?: NamedNode
-  expenseCategory?: string
+  halfTradeId: string
+  // These should match HALF_TRADE_FIELDS above:
   date: Date
   from: string
   to: string
-  halfTradeId: string
   amount: number
   unit: string
+  impliedBy: string
   description: string
+  fullInfo: string
   constructor(uri: NamedNode, kb: IndexedFormula) {
     this.uri = uri
     HALF_TRADE_FIELDS.forEach((field: string) => {
