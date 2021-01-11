@@ -68,7 +68,7 @@ function parseLines(lines, scrapeFileUrl) {
         amount: amounts[name],
         date: lines[cursor+3],
         fullInfo: lines.slice(cursor, cursor + 6),
-        impliedBy: `${scrapeFileUrl}#L${cursor + 1}-L${cursor + 7}` // First line is line 1
+        impliedBy: `${scrapeFileUrl}#L${cursor + 1}-L${cursor + 5}` // First line is line 1
       });
       sanityCheck += amounts[name];
     });

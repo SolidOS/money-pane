@@ -58,7 +58,7 @@ export function importPaypalCsv(text: string, filePath: string): HalfTrade[] {
       return {
         from: 'paypal',
         to: obj.Naam,
-        date: toDate(obj.Datum),
+        date: new Date(`${obj.Datum} ${obj.Tijd} (${obj.Tijdzone})`), // FIXME: I think the browser will ignore the timezone and just use its own default one
         amount: parseFloat(obj.Bruto),
         unit: obj.Valuta,
         halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
