@@ -44,6 +44,7 @@
   "dependencies": {
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
+    "mt940js": "^1.3.5",
     "solid-ui": "^2.3.8",
     "stream-browserify": "^3.0.0",
     "uuid": "^8.3.2"
