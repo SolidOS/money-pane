@@ -32,6 +32,7 @@ const LEDGER_LOCATION_IN_CONTAINER = 'index.ttl#this'
   const forMonth = (window as any).halfTrades.filter(x => x.date >= monthStart && x.date < monthEnd)
   console.log({ month, year, monthStart, monthEnd, forMonth });
   document.getElementById('list').innerHTML = generateTable(forMonth)
+  ;(window as any).forMonth = forMonth;
 }
 ;(window as any).halfTrades = [];
 ;(window as any).importBankStatement = async function() {
