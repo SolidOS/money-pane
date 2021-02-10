@@ -13,18 +13,20 @@ function mccToCategory (mcc, t) {
   if (categories.mcc[mcc]) {
     return categories.mcc[mcc]
   }
-  console.log('MCC not found', mcc, t)
+  // console.log('MCC not found', mcc, t)
   return `MCC-${mcc}`
 }
 
 function descriptionToCategory (description, t) {
   const entries = Object.keys(categories.description)
+  // console.log('looking for description prefix', description)
   for (let i = 0; i < entries.length; i++) {
+    // console.log(entries[i], description.startsWith(entries[i]))
     if (description.startsWith(entries[i])) {
       return categories.description[entries[i]]
     }
   }
-  console.log('description not found', description, t)
+  // console.log('description not found', description, t)
   return 'Unknown description'
 }
 
@@ -32,7 +34,7 @@ function incassantToCategory (incassantId, t) {
   if (categories.incassant[incassantId]) {
     return categories.incassant[incassantId]
   }
-  console.log('incassant not found', incassantId, t)
+  // console.log('incassant not found', incassantId, t)
   return `INCASSANT-${incassantId}`
 }
 
@@ -50,7 +52,7 @@ function ibanToCategory (tegenrekening, omschrijving, t) {
     }
     return categories.iban[tegenrekening]
   }
-  console.log('iban not found', t)
+  // console.log('iban not found', t)
   return `iban-${tegenrekening}`
 }
 
@@ -65,7 +67,7 @@ for (const s of statements) {
     if (['NBEA', 'NBTL', 'NCOR'].indexOf(t.transactionType) !== -1) {
       const matches = /(.*)MCC:([0-9]*)(.*)/g.exec(description)
       if (matches === null) {
-        console.log('NBEA but not MCC in details?', t, description)
+        // console.log('NBEA but not MCC in details?', t, description)
         expenseCategory = descriptionToCategory(description, t)
       } else {
         const mcc = matches[2]
@@ -77,7 +79,7 @@ for (const s of statements) {
       }
     } else if (['NDIV', 'NRNT', 'NKST', 'NGEA'].indexOf(t.transactionType) !== -1) {
       expenseCategory = categories.transactionType[t.transactionType]
-    } else if (['NIDB', 'NIOB', 'NOVB'].indexOf(t.transactionType) !== -1) {
+    } else if (['NIDB', 'NIOB', 'NOVB', 'NSTO'].indexOf(t.transactionType) !== -1) {
       const iban = description.split(' ')[0]
       if (iban.substring(0, 16) !== t.reference) {
         console.error('unexpected mismatch between iban prefix and reference', iban, t.reference, t.details)
@@ -105,4 +107,31 @@ for (const s of statements) {
     totals[month][expenseCategory] -= t.amount
   }
 }
-console.log(totals)
+const months = [
+  '2020-01',
+  '2020-02',
+  '2020-03',
+  '2020-04',
+  '2020-05',
+  '2020-06',
+  '2020-07',
+  '2020-08',
+  '2020-09',
+  '2020-10',
+  '2020-11',
+  '2020-12',
+  '2021-01'
+]
+
+// Today is 10 February:
+const current = '2021-02'
+const factor = 28 / 10
+
+function round (x) {
+  // return Math.floor(x * 100) / 100
+  return Math.floor(x)
+}
+console.log('category', 'budget', months)
+Object.keys(categories.budget).forEach(category => {
+  console.log(category, categories.budget[category], months.map(month => round(totals[month][category] || 0)), round(totals[current][category] * factor || 0))
+})
