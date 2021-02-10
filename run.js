@@ -56,7 +56,20 @@ function ibanToCategory (tegenrekening, omschrijving, t) {
   return `iban-${tegenrekening}`
 }
 
-const totals = {}
+function dateToMonth (date) {
+  return `${date.getUTCFullYear()}-${('0' + (date.getUTCMonth() + 1)).slice(-2)}`
+}
+function dateToFactor (date) {
+  // console.log('factor 30 / ', date.getUTCDate(), 30 / date.getUTCDate())
+  return 30 / date.getUTCDate()
+}
+
+const now = new Date()
+const current = dateToMonth(now)
+const factor = dateToFactor(now)
+const totals = {
+  [current]: {}
+}
 
 for (const s of statements) {
   // console.log('statement:', s)
@@ -79,10 +92,15 @@ for (const s of statements) {
       }
     } else if (['NDIV', 'NRNT', 'NKST', 'NGEA'].indexOf(t.transactionType) !== -1) {
       expenseCategory = categories.transactionType[t.transactionType]
-    } else if (['NIDB', 'NIOB', 'NOVB', 'NSTO'].indexOf(t.transactionType) !== -1) {
-      const iban = description.split(' ')[0]
-      if (iban.substring(0, 16) !== t.reference) {
-        console.error('unexpected mismatch between iban prefix and reference', iban, t.reference, t.details)
+    } else if (['NIDB', 'NIOB', 'NOVB', 'NSTO', 'FTRF'].indexOf(t.transactionType) !== -1) {
+      let iban
+      if (t.structuredDetails) {
+        iban = t.structuredDetails[38]
+      } else {
+        iban = description.split(' ')[0]
+        if (iban.substring(0, 16) !== t.reference) {
+          console.error('unexpected mismatch between iban prefix and reference', iban, t.reference, t.details)
+        }
       }
       expenseCategory = ibanToCategory(iban, description, t)
     } else if (['NINC'].indexOf(t.transactionType) !== -1) {
@@ -96,7 +114,7 @@ for (const s of statements) {
       console.error('Please implement parsing for transaction type ' + t.transactionType, t)
       expenseCategory = t.transactionType
     }
-    const month = `${t.date.getUTCFullYear()}-${('0' + (t.date.getUTCMonth() + 1)).slice(-2)}`
+    const month = dateToMonth(t.date)
     // console.log(t.date, month)
     if (!totals[month]) {
       totals[month] = {}
@@ -107,25 +125,7 @@ for (const s of statements) {
     totals[month][expenseCategory] -= t.amount
   }
 }
-const months = [
-  '2020-01',
-  '2020-02',
-  '2020-03',
-  '2020-04',
-  '2020-05',
-  '2020-06',
-  '2020-07',
-  '2020-08',
-  '2020-09',
-  '2020-10',
-  '2020-11',
-  '2020-12',
-  '2021-01'
-]
-
-// Today is 10 February:
-const current = '2021-02'
-const factor = 28 / 10
+const months = categories.months
 
 function round (x) {
   // return Math.floor(x * 100) / 100

@@ -33,3 +33,13 @@ git commit --no-verify -am"build"
 git remote add 5apps git@5apps.com:michiel_solid-money.git
 git push 5apps deploy:master
 ```
+
+## Active development
+You can run:
+```sh
+export CATEGORIES_FILE=./example-categories.js
+export MT940_FILE=./example.940
+node run.js
+```
+
+To see a report of your personal spending habits against your self-imposed budget.
