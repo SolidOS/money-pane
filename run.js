@@ -133,5 +133,13 @@ function round (x) {
 }
 console.log('category', 'budget', months)
 Object.keys(categories.budget).forEach(category => {
-  console.log(category, categories.budget[category], months.map(month => round(totals[month][category] || 0)), round(totals[current][category] * factor || 0))
+  console.log(category, categories.budget[category], months.map(month => {
+    if (!totals[month].all) {
+      totals[month].all = 0
+    }
+    const rounded = round(totals[month][category] || 0)
+    totals[month].all += rounded
+    return rounded
+  }), round(totals[current][category] * factor || 0))
 })
+console.log('all', months.map(month => totals[month].all))
