@@ -120,9 +120,13 @@ for (const s of statements) {
       totals[month] = {}
     }
     if (!totals[month][expenseCategory]) {
-      totals[month][expenseCategory] = 0
+      totals[month][expenseCategory] = {
+        sum: 0,
+        transactions: []
+      }
     }
-    totals[month][expenseCategory] -= t.amount
+    totals[month][expenseCategory].transactions.push(t)
+    totals[month][expenseCategory].sum -= t.amount
   }
 }
 const months = categories.months
@@ -131,15 +135,25 @@ function round (x) {
   // return Math.floor(x * 100) / 100
   return Math.floor(x)
 }
-console.log('category', 'budget', months)
-Object.keys(categories.budget).forEach(category => {
-  console.log(category, categories.budget[category], months.map(month => {
-    if (!totals[month].all) {
-      totals[month].all = 0
-    }
-    const rounded = round(totals[month][category] || 0)
-    totals[month].all += rounded
-    return rounded
-  }), round(totals[current][category] * factor || 0))
-})
-console.log('all', months.map(month => totals[month].all))
+
+if (process.argv[2]) {
+  Object.keys(totals[process.argv[2]]).forEach(category => {
+    console.log(category,
+      `${round(totals[process.argv[2]][category].sum)} (${categories.budget[category]})`,
+      totals[process.argv[2]][category].transactions.map(t => `${t.amount}: ${t.details.split('\n').map(line => line.trim()).join()}`))
+  })
+  console.log(totals[process.argv[2]].Unknown)
+} else {
+  console.log('category', 'budget', months)
+  Object.keys(categories.budget).forEach(category => {
+    console.log(category, categories.budget[category], months.map(month => {
+      if (!totals[month].all) {
+        totals[month].all = { sum: 0 }
+      }
+      const rounded = (totals[month][category] ? round(totals[month][category].sum) : 0)
+      totals[month].all.sum += rounded
+      return rounded
+    }), (totals[current][category] ? round(totals[current][category].sum * factor) : 0))
+  })
+  console.log('all', months.map(month => totals[month].all.sum))
+}
