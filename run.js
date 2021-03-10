@@ -1,29 +1,34 @@
 const fs = require('fs')
 const mt940js = require('mt940js')
 
-const statement = fs.readFileSync(process.env.MT940_FILE, 'utf8')
 // eslint-disable-next-line import/no-absolute-path
-const categories = require(process.env.CATEGORIES_FILE)
+const dataRoot = require(process.env.DATA_ROOT)
 const parser = new mt940js.Parser()
 
-const statements = parser.parse(statement)
+let statements = []
+dataRoot.mt940.forEach(fileName => {
+  const fileBuffer = fs.readFileSync(fileName, 'utf8')
+  const theseStatements = parser.parse(fileBuffer)
+  statements = statements.concat(theseStatements)
+  console.log(`Parsed ${fileName} with ${theseStatements.length} statements, total now ${statements.length}`)
+})
 
 function mccToCategory (mcc, t) {
   // See https://www.citibank.com/tts/solutions/commercial-cards/assets/docs/govt/Merchant-Category-Codes.pdf
-  if (categories.mcc[mcc]) {
-    return categories.mcc[mcc]
+  if (dataRoot.mcc[mcc]) {
+    return dataRoot.mcc[mcc]
   }
   // console.log('MCC not found', mcc, t)
   return `MCC-${mcc}`
 }
 
 function descriptionToCategory (description, t) {
-  const entries = Object.keys(categories.description)
+  const entries = Object.keys(dataRoot.description)
   // console.log('looking for description prefix', description)
   for (let i = 0; i < entries.length; i++) {
     // console.log(entries[i], description.startsWith(entries[i]))
     if (description.startsWith(entries[i])) {
-      return categories.description[entries[i]]
+      return dataRoot.description[entries[i]]
     }
   }
   // console.log('description not found', description, t)
@@ -31,17 +36,17 @@ function descriptionToCategory (description, t) {
 }
 
 function incassantToCategory (incassantId, t) {
-  if (categories.incassant[incassantId]) {
-    return categories.incassant[incassantId]
+  if (dataRoot.incassant[incassantId]) {
+    return dataRoot.incassant[incassantId]
   }
   // console.log('incassant not found', incassantId, t)
   return `INCASSANT-${incassantId}`
 }
 
 function ibanToCategory (tegenrekening, omschrijving, t) {
-  if (categories.iban[tegenrekening]) {
-    if (categories.iban[tegenrekening] === 'Unknown') {
-      const strings = categories.description
+  if (dataRoot.iban[tegenrekening]) {
+    if (dataRoot.iban[tegenrekening] === 'Unknown') {
+      const strings = dataRoot.description
       let ret = 'Unknown'
       Object.keys(strings).forEach(str => {
         if (omschrijving.indexOf(str) !== -1) {
@@ -50,7 +55,7 @@ function ibanToCategory (tegenrekening, omschrijving, t) {
       })
       return ret
     }
-    return categories.iban[tegenrekening]
+    return dataRoot.iban[tegenrekening]
   }
   // console.log('iban not found', t)
   return `iban-${tegenrekening}`
@@ -91,7 +96,7 @@ for (const s of statements) {
         expenseCategory = mccToCategory(mcc.toString(), t)
       }
     } else if (['NDIV', 'NRNT', 'NKST', 'NGEA'].indexOf(t.transactionType) !== -1) {
-      expenseCategory = categories.transactionType[t.transactionType]
+      expenseCategory = dataRoot.transactionType[t.transactionType]
     } else if (['NIDB', 'NIOB', 'NOVB', 'NSTO', 'FTRF'].indexOf(t.transactionType) !== -1) {
       let iban
       if (t.structuredDetails) {
@@ -129,7 +134,7 @@ for (const s of statements) {
     totals[month][expenseCategory].sum -= t.amount
   }
 }
-const months = categories.months
+const months = dataRoot.months
 
 function round (x) {
   // return Math.floor(x * 100) / 100
@@ -139,14 +144,14 @@ function round (x) {
 if (process.argv[2]) {
   Object.keys(totals[process.argv[2]]).forEach(category => {
     console.log(category,
-      `${round(totals[process.argv[2]][category].sum)} (${categories.budget[category]})`,
+      `${round(totals[process.argv[2]][category].sum)} (${dataRoot.budget[category]})`,
       totals[process.argv[2]][category].transactions.map(t => `${t.amount}: ${t.details.split('\n').map(line => line.trim()).join()}`))
   })
   console.log(totals[process.argv[2]].Unknown)
 } else {
   console.log('category', 'budget', months)
-  Object.keys(categories.budget).forEach(category => {
-    console.log(category, categories.budget[category], months.map(month => {
+  Object.keys(dataRoot.budget).forEach(category => {
+    console.log(category, dataRoot.budget[category], months.map(month => {
       if (!totals[month].all) {
         totals[month].all = { sum: 0 }
       }
