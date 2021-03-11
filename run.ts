@@ -36,10 +36,14 @@ function addToFullRecord({ date, amount: amount, thisAccount, otherAccount, file
     [fileId]: halfTradeId
   })
 }
+const parsers = {
+  'asnbank-mt940': parseMt940
+}
 
-dataRoot.mt940.forEach(fileName => {
+Object.keys(dataRoot.files).forEach(fileName => {
   const fileBuffer = fs.readFileSync(fileName, 'utf8')
-  const { theseExpenses } = parseMt940(fileBuffer, fileName, dataRoot, addToFullRecord)
+  const parser = parsers[dataRoot.files[fileName]]
+  const { theseExpenses } = parser(fileBuffer, fileName, dataRoot, addToFullRecord)
   converted = converted.concat(theseExpenses)
   console.log(`Parsed ${fileName} with ${theseExpenses.length} statements, total now ${converted.length}`)
 })
