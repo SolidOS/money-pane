@@ -53,6 +53,17 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
 
 export function parseMt940 (fileBuffer, dataRoot) {
   const statements = parser.parse(fileBuffer)
+  const fullRecord = {}
+  function addToFullRecord(account, date, amount, halfTradeId) {
+    if (!fullRecord[account]) {
+      fullRecord[account] = {}
+    }
+    if (!fullRecord[account][date]) {
+      fullRecord[account][date] = {}
+    }
+    fullRecord[account][date][halfTradeId] = amount
+  }
+  
   const converted = []
   for (const s of statements) {
     for (const t of s.transactions) {
@@ -84,6 +95,10 @@ export function parseMt940 (fileBuffer, dataRoot) {
             console.error('unexpected mismatch between iban prefix and reference', iban, t.reference, t.details)
           }
         }
+        if (dataRoot.myIbans.indexOf(iban) !== -1) {
+          console.log('internal!', t)
+        }
+
         expenseCategory = ibanToCategory(iban, description, t, dataRoot)
       } else if (['NINC'].indexOf(t.transactionType) !== -1) {
         const matches = /(.*)-Incassant ID: (.*)-Kenmerk Machtiging: (.*)/g.exec(description)
@@ -96,18 +111,23 @@ export function parseMt940 (fileBuffer, dataRoot) {
         console.error('Please implement parsing for transaction type ' + t.transactionType, t)
         expenseCategory = t.transactionType
       }
+      const halfTradeId = `from-mt940-${uuidV4()}`
       converted.push({
         from: s.accountIdentification,
         to: 'Counterparty',
         date: t.date,
         amount: -t.amount,
         unit: 'EUR',
-        halfTradeId: `from-mt940-${uuidV4()}`,
+        halfTradeId,
         expenseCategory,
         transaction: t
       })
+      addToFullRecord(s.accountIdentification, t.date, t.amount, halfTradeId)
     }
   }
-  return converted
+  return {
+    fullRecord,
+    theseExpenses: converted
+  }
 }
 

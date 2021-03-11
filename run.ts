@@ -7,7 +7,7 @@ const dataRoot = require(process.env.DATA_ROOT)
 let converted = []
 dataRoot.mt940.forEach(fileName => {
   const fileBuffer = fs.readFileSync(fileName, 'utf8')
-  const theseExpenses = parseMt940(fileBuffer, dataRoot)
+  const { fullRecord, theseExpenses } = parseMt940(fileBuffer, dataRoot)
   converted = converted.concat(theseExpenses)
   console.log(`Parsed ${fileName} with ${theseExpenses.length} statements, total now ${converted.length}`)
 })
