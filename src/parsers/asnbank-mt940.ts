@@ -51,24 +51,50 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
   return `iban-${tegenrekening}`
 }
 
-export function parseMt940 (fileBuffer, dataRoot) {
+export function parseMt940 (fileBuffer, fileId, dataRoot, fullRecord) {
   const statements = parser.parse(fileBuffer)
-  const fullRecord = {}
-  function addToFullRecord(account, date, amount, halfTradeId) {
-    if (!fullRecord[account]) {
-      fullRecord[account] = {}
+  function addToFullRecord({ date, amount: amount, thisAccount, otherAccount, halfTradeId }) {
+    let from = (amount < 0 ? thisAccount : otherAccount)
+    let to = (amount < 0 ? otherAccount : thisAccount)
+    let absAmount = Math.abs(amount)
+    // console.log('addToFullRecord', { from, to, date, amount: absAmount, halfTradeId })
+    if (!fullRecord[date]) {
+      fullRecord[date] = {}
     }
-    if (!fullRecord[account][date]) {
-      fullRecord[account][date] = {}
+    if (!fullRecord[date][absAmount]) {
+      fullRecord[date][absAmount] = {}
     }
-    fullRecord[account][date][halfTradeId] = amount
+    if (!fullRecord[date][absAmount][from]) {
+      fullRecord[date][absAmount][from] = {}
+    }
+    if (!fullRecord[date][absAmount][from][to]) {
+      fullRecord[date][absAmount][from][to] = []
+    }
+    for (let i=0; i < fullRecord[date][absAmount][from][to].length; i++) {
+      if (!fullRecord[date][absAmount][from][to][i][fileId]) {
+        console.log('taking slot', i)
+        fullRecord[date][absAmount][from][to][i][fileId] = halfTradeId
+        return
+      }
+      console.log('slot is taken', i)
+    }
+    console.log('adding slot')
+    fullRecord[date][absAmount][from][to].push({
+      [fileId]: halfTradeId
+    })
   }
   
   const converted = []
-  for (const s of statements) {
-    for (const t of s.transactions) {
+  for (let i = 0; i < statements.length; i++) {
+    const s = statements[i]
+    for (let j = 0; j < s.transactions.length; j++) {
+      const t = s.transactions[j]
+      if (Math.abs(t.amount) !== 2134.1) {
+        continue
+      }
       // console.log('transaction:', t)
       let expenseCategory
+      let counterParty
       const description = t.details.split('\n').join('').trim()
       if (['NBEA', 'NBTL', 'NCOR'].indexOf(t.transactionType) !== -1) {
         const matches = /(.*)MCC:([0-9]*)(.*)/g.exec(description)
@@ -95,10 +121,10 @@ export function parseMt940 (fileBuffer, dataRoot) {
             console.error('unexpected mismatch between iban prefix and reference', iban, t.reference, t.details)
           }
         }
-        if (dataRoot.myIbans.indexOf(iban) !== -1) {
-          console.log('internal!', t)
-        }
-
+        // if (dataRoot.myIbans.indexOf(iban) !== -1) {
+        //   console.log('internal!', t)
+        // }
+        counterParty = iban
         expenseCategory = ibanToCategory(iban, description, t, dataRoot)
       } else if (['NINC'].indexOf(t.transactionType) !== -1) {
         const matches = /(.*)-Incassant ID: (.*)-Kenmerk Machtiging: (.*)/g.exec(description)
@@ -111,7 +137,7 @@ export function parseMt940 (fileBuffer, dataRoot) {
         console.error('Please implement parsing for transaction type ' + t.transactionType, t)
         expenseCategory = t.transactionType
       }
-      const halfTradeId = `from-mt940-${uuidV4()}`
+      const halfTradeId = `from-asnbank-mt940-${fileId}-${i}-${j}`
       converted.push({
         from: s.accountIdentification,
         to: 'Counterparty',
@@ -122,7 +148,13 @@ export function parseMt940 (fileBuffer, dataRoot) {
         expenseCategory,
         transaction: t
       })
-      addToFullRecord(s.accountIdentification, t.date, t.amount, halfTradeId)
+      addToFullRecord({
+        date: t.date,
+        amount: t.amount,
+        thisAccount: s.accountIdentification,
+        otherAccount: counterParty || expenseCategory,
+        halfTradeId
+      })
     }
   }
   return {
