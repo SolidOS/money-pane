@@ -37,9 +37,10 @@ git push 5apps deploy:master
 ## Active development
 You can run:
 ```sh
-export CATEGORIES_FILE=./example-categories.js
-export MT940_FILE=./example.940
-node run.js
+DATA_ROOT=dataRoot.js ./node_modules/.bin/ts-node-dev run.ts
 ```
 
 To see a report of your personal spending habits against your self-imposed budget.
+I (Michiel de Jong) am running this with my own data root file now, ping me in
+https://gitter.im/solid/solidos if you want to know more about its format, I can
+create an up-to-date anonymized example data root file.
