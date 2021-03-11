@@ -1,5 +1,5 @@
 const fs = require('fs')
-const { parseMt940 } = require('./src/parsers/asnbank-mt940.js')
+const { parseMt940 } = require('./src/parsers/asnbank-mt940')
 
 // eslint-disable-next-line import/no-absolute-path
 const dataRoot = require(process.env.DATA_ROOT)
@@ -32,7 +32,7 @@ function dateToFactor (date) {
 const now = new Date()
 const current = dateToMonth(now)
 const factor = dateToFactor(now)
-const totals = {
+const totals: any = {
   [current]: {}
 }
 

@@ -50,7 +50,7 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
   return `iban-${tegenrekening}`
 }
 
-function parseMt940 (fileBuffer, dataRoot) {
+export function parseMt940 (fileBuffer, dataRoot) {
   const statements = parser.parse(fileBuffer)
   const converted = []
   for (const s of statements) {
@@ -107,4 +107,3 @@ function parseMt940 (fileBuffer, dataRoot) {
   return converted
 }
 
-module.exports = { parseMt940 }
