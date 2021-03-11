@@ -76,6 +76,7 @@ const totals = {
   [current]: {}
 }
 
+const converted = []
 for (const s of statements) {
   // console.log('statement:', s)
   for (const t of s.transactions) {
@@ -119,21 +120,31 @@ for (const s of statements) {
       console.error('Please implement parsing for transaction type ' + t.transactionType, t)
       expenseCategory = t.transactionType
     }
-    const month = dateToMonth(t.date)
-    // console.log(t.date, month)
-    if (!totals[month]) {
-      totals[month] = {}
-    }
-    if (!totals[month][expenseCategory]) {
-      totals[month][expenseCategory] = {
-        sum: 0,
-        transactions: []
-      }
-    }
-    totals[month][expenseCategory].transactions.push(t)
-    totals[month][expenseCategory].sum -= t.amount
+    converted.push({
+      date: t.date,
+      amount: -t.amount,
+      expenseCategory,
+      transaction: t
+    })
   }
 }
+
+for (const expense of converted) {
+  const month = dateToMonth(expense.date)
+  // console.log(t.date, month)
+  if (!totals[month]) {
+    totals[month] = {}
+  }
+  if (!totals[month][expense.expenseCategory]) {
+    totals[month][expense.expenseCategory] = {
+      sum: 0,
+      transactions: []
+    }
+  }
+  totals[month][expense.expenseCategory].transactions.push(expense.transaction)
+  totals[month][expense.expenseCategory].sum += expense.amount
+}
+
 const months = dataRoot.months
 
 function round (x) {
