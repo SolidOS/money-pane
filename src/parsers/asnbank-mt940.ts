@@ -1,6 +1,7 @@
-const mt940js = require('mt940js')
+import { v4 as uuidV4 } from 'uuid'
+import { Parser as mt940Parser } from 'mt940js'
 
-const parser = new mt940js.Parser()
+const parser = new mt940Parser()
 
 function mccToCategory (mcc, t, dataRoot) {
   // See https://www.citibank.com/tts/solutions/commercial-cards/assets/docs/govt/Merchant-Category-Codes.pdf
@@ -54,7 +55,6 @@ export function parseMt940 (fileBuffer, dataRoot) {
   const statements = parser.parse(fileBuffer)
   const converted = []
   for (const s of statements) {
-    // console.log('statement:', s)
     for (const t of s.transactions) {
       // console.log('transaction:', t)
       let expenseCategory
@@ -97,8 +97,12 @@ export function parseMt940 (fileBuffer, dataRoot) {
         expenseCategory = t.transactionType
       }
       converted.push({
+        from: s.accountIdentification,
+        to: 'Counterparty',
         date: t.date,
         amount: -t.amount,
+        unit: 'EUR',
+        halfTradeId: `from-mt940-${uuidV4()}`,
         expenseCategory,
         transaction: t
       })
