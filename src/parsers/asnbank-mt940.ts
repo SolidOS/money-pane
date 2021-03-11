@@ -51,38 +51,8 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
   return `iban-${tegenrekening}`
 }
 
-export function parseMt940 (fileBuffer, fileId, dataRoot, fullRecord) {
+export function parseMt940 (fileBuffer, fileId, dataRoot, addToFullRecord) {
   const statements = parser.parse(fileBuffer)
-  function addToFullRecord({ date, amount: amount, thisAccount, otherAccount, halfTradeId }) {
-    let from = (amount < 0 ? thisAccount : otherAccount)
-    let to = (amount < 0 ? otherAccount : thisAccount)
-    let absAmount = Math.abs(amount)
-    // console.log('addToFullRecord', { from, to, date, amount: absAmount, halfTradeId })
-    if (!fullRecord[date]) {
-      fullRecord[date] = {}
-    }
-    if (!fullRecord[date][absAmount]) {
-      fullRecord[date][absAmount] = {}
-    }
-    if (!fullRecord[date][absAmount][from]) {
-      fullRecord[date][absAmount][from] = {}
-    }
-    if (!fullRecord[date][absAmount][from][to]) {
-      fullRecord[date][absAmount][from][to] = []
-    }
-    for (let i=0; i < fullRecord[date][absAmount][from][to].length; i++) {
-      if (!fullRecord[date][absAmount][from][to][i][fileId]) {
-        console.log('taking slot', i)
-        fullRecord[date][absAmount][from][to][i][fileId] = halfTradeId
-        return
-      }
-      console.log('slot is taken', i)
-    }
-    console.log('adding slot')
-    fullRecord[date][absAmount][from][to].push({
-      [fileId]: halfTradeId
-    })
-  }
   
   const converted = []
   for (let i = 0; i < statements.length; i++) {
@@ -153,12 +123,12 @@ export function parseMt940 (fileBuffer, fileId, dataRoot, fullRecord) {
         amount: t.amount,
         thisAccount: s.accountIdentification,
         otherAccount: counterParty || expenseCategory,
+        fileId,
         halfTradeId
       })
     }
   }
   return {
-    fullRecord,
     theseExpenses: converted
   }
 }

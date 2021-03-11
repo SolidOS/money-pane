@@ -6,9 +6,40 @@ const dataRoot = require(process.env.DATA_ROOT)
 
 let converted = []
 const fullRecord = {}
+function addToFullRecord({ date, amount: amount, thisAccount, otherAccount, fileId, halfTradeId }) {
+  let from = (amount < 0 ? thisAccount : otherAccount)
+  let to = (amount < 0 ? otherAccount : thisAccount)
+  let absAmount = Math.abs(amount)
+  // console.log('addToFullRecord', { from, to, date, amount: absAmount, halfTradeId })
+  if (!fullRecord[date]) {
+    fullRecord[date] = {}
+  }
+  if (!fullRecord[date][absAmount]) {
+    fullRecord[date][absAmount] = {}
+  }
+  if (!fullRecord[date][absAmount][from]) {
+    fullRecord[date][absAmount][from] = {}
+  }
+  if (!fullRecord[date][absAmount][from][to]) {
+    fullRecord[date][absAmount][from][to] = []
+  }
+  for (let i=0; i < fullRecord[date][absAmount][from][to].length; i++) {
+    if (!fullRecord[date][absAmount][from][to][i][fileId]) {
+      console.log('taking slot', i)
+      fullRecord[date][absAmount][from][to][i][fileId] = halfTradeId
+      return
+    }
+    console.log('slot is taken', i)
+  }
+  console.log('adding slot')
+  fullRecord[date][absAmount][from][to].push({
+    [fileId]: halfTradeId
+  })
+}
+
 dataRoot.mt940.forEach(fileName => {
   const fileBuffer = fs.readFileSync(fileName, 'utf8')
-  const { theseExpenses } = parseMt940(fileBuffer, fileName, dataRoot, fullRecord)
+  const { theseExpenses } = parseMt940(fileBuffer, fileName, dataRoot, addToFullRecord)
   converted = converted.concat(theseExpenses)
   console.log(`Parsed ${fileName} with ${theseExpenses.length} statements, total now ${converted.length}`)
 })
