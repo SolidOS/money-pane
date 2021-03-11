@@ -1,6 +1,6 @@
 import { IndexedFormula, namedNode, NamedNode } from 'rdflib'
-import { ns } from 'solid-ui'
-
+// import { ns } from 'solid-ui'
+const ns: any = {}
 ns.halftrade = (label: string) => namedNode(`https://ledgerloops.com/vocab/halftrade#${label}`)
 ns.money = (tag: string) => namedNode(`https://example.com/#${tag}`) // @@TBD
 

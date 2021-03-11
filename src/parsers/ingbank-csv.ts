@@ -54,3 +54,7 @@ export function importIngCsv(text: string, filePath: string): HalfTrade[] {
     }
   })
 }
+
+export function parseIngbankCsv ({ fileBuffer, fileId, dataRoot, addToFullRecord }) {
+  console.log('implement me!')
+}

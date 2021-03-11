@@ -96,3 +96,7 @@ export function importWiebetaaltwatScrape(text: string, filePath: string): HalfT
     }
   })
 }
+
+export function parseWieBetaaltWat ({ fileBuffer, fileId, dataRoot, addToFullRecord }) {
+  console.log('implement me!')
+}

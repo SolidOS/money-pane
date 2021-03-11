@@ -51,7 +51,7 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
   return `iban-${tegenrekening}`
 }
 
-export function parseMt940 (fileBuffer, fileId, dataRoot, addToFullRecord) {
+export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot, addToFullRecord }) {
   const statements = parser.parse(fileBuffer)
   
   const converted = []

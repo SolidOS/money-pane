@@ -89,3 +89,7 @@ export function importIngCcScrape(text: string, filePath: string) {
     }
   })
 }
+
+export function parseIngCreditcardScrape ({ fileBuffer, fileId, dataRoot, addToFullRecord }) {
+  console.log('implement me!')
+}
