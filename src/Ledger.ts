@@ -181,8 +181,38 @@ export class WorldLedgerMutation {
   date: Date
   amount: number
   unit: string
+  data: {
+    [field: string]: any
+  }
+  constructor(options: {
+    from: string
+  to: string
+  date: Date
+  amount: number
+  unit: string
   data: any
-  representations: ImportDetails[]
+  }) {
+    this.from = options.from
+    this.to = options.to
+    this.date = options.date
+    this.amount = options.amount
+    this.unit = options.unit
+    this.data = options.data
+  }
+  mixIn(other: WorldLedgerMutation) {
+    ['from', 'to', 'date', 'amount', 'unit'].forEach(field => {
+
+      if (other[field].toString() !== this[field].toString()) {
+        throw new Error(`${field} doesn\'t match!`)
+      }
+    })
+    Object.keys(other.data).forEach(field => {
+      if (this.data[field] && this.data[field].toString() !== other.data[field].toString()) {
+        throw new Error(`data.${field} doesn\'t match!`)
+      }
+      this.data[field] = other.data[field]
+    })
+  }
 }
 
 export class AccountHistoryChunk {
@@ -237,11 +267,6 @@ export class AccountHistoryChunk {
         importedFrom: this.importedFrom
       })
     ]
-  }
-  addView (other: AccountHistoryChunk, firstCoincidence: number) {
-    // just add the importedFrom
-    // error if date is outside current end/start
-    // error if the array of mutations for any overlapping day isn't exactly the same
   }
   getEndBalance() {
     let balance = this.startBalance.amount
@@ -310,7 +335,31 @@ export class AccountHistoryChunk {
   }
 
   mixIn (other: AccountHistoryChunk) {
-    // TODO: implement
+    let firstAffected: number = -1
+    for(let i = 0; i < this.mutations.length; i++) {
+      if (this.mutations[i].date < other.startDate) {
+        // console.log('not overlapping yet')
+        continue
+      }
+      if (this.mutations[i].date >= other.endDate) {
+        break
+      }
+      if (firstAffected === -1) {
+        firstAffected = i
+      }
+      if (i + firstAffected >= other.mutations.length) {
+        throw new Error('mutations missing at the end of mixIn!')
+      }
+      this.mutations[i].mixIn(other.mutations[i + firstAffected])
+    }
+    // console.log('not overlapping anymore')
+    this.importedFrom = this.importedFrom.concat(other.importedFrom.map(i => new ImportDetails({
+      fileId: i.fileId,
+      parserName: i.parserName,
+      parserVersion: i.parserVersion,
+      firstAffected: i.firstAffected + firstAffected,
+      lastAffected: i.lastAffected + firstAffected,
+    })))
   }
   addData (other: AccountHistoryChunk) {
     if (other.endDate < this.startDate) {
