@@ -143,3 +143,195 @@ export class SettledPurchase {
     this.purchaseId = `purchase-settled-by-${values.settlementTransactionId}`
   }
 }
+
+export class WorldLedgerAccountId {
+  didProtocol: string // e.g. the string 'iban'
+  didId: string // e.g. an IBAN account number
+}
+
+export class Balance {
+  amount: number // in the 'obvious' (FIXME) direction, e.g. what the bank owes its customer.
+  unit: string // e.g. the string 'EUR' or 
+}
+
+export class ImportDetails {
+  fileId: string
+  parserName: string
+  parserVersion: string
+  firstAffected: number
+  lastAffected: number
+  constructor (options: {
+    fileId: string
+    parserName: string
+    parserVersion: string
+    firstAffected: number
+    lastAffected: number
+  }) {
+    this.fileId = options.fileId
+    this.parserName = options.parserName
+    this.parserVersion = options.parserVersion
+    this.firstAffected = options.firstAffected
+    this.lastAffected = options.lastAffected
+  }
+}
+
+export class WorldLedgerMutation {
+  from: string
+  to: string
+  date: Date
+  amount: number
+  unit: string
+  data: any
+  representations: ImportDetails[]
+}
+
+export class AccountHistoryChunk {
+  account: string // e.g. iban:NL08INGB0000000555
+  startDate: Date
+  endDate: Date
+  mutations: WorldLedgerMutation[] // ordered
+  startBalance?: Balance
+  importedFrom: ImportDetails[]
+  constructor (options: {
+    account: string,
+    startDate: Date,
+    endDate: Date,
+    mutations: WorldLedgerMutation[],
+    startBalance?: Balance,
+    importedFrom: ImportDetails[]
+  }) {
+    this.account = options.account
+    this.startBalance = options.startBalance
+    this.mutations = options.mutations
+    this.startDate = options.startDate
+    this.endDate = options.endDate
+    this.importedFrom = options.importedFrom
+  }
+  splitAt(date: Date): AccountHistoryChunk[] {
+    let balance: number
+    let splitIndex: number
+    if (this.startBalance) {
+      balance = this.startBalance.amount
+      for (let i = 0; i < this.mutations.length && this.mutations[i].date < date; i++) {
+        balance += this.mutations[i].amount
+        if (this.mutations[i].date >= date) {
+          splitIndex = i
+        }
+      }
+    }
+    return [
+      new AccountHistoryChunk({
+        account: this.account,
+        startDate: date, // mutations are allowed >= the startDate
+        endDate: this.endDate, // mutations are allowed < the endDate
+        mutations: this.mutations.slice(0, splitIndex),
+        startBalance: { amount: balance, unit: this.startBalance.unit },
+        importedFrom: this.importedFrom
+      }),
+      new AccountHistoryChunk({
+        account: this.account,
+        startDate: this.startDate,
+        endDate: date,
+        mutations: this.mutations.slice(splitIndex),
+        startBalance: this.startBalance,
+        importedFrom: this.importedFrom
+      })
+    ]
+  }
+  addView (other: AccountHistoryChunk, firstCoincidence: number) {
+    // just add the importedFrom
+    // error if date is outside current end/start
+    // error if the array of mutations for any overlapping day isn't exactly the same
+  }
+  getEndBalance() {
+    let balance = this.startBalance.amount
+    for (let i = 0; i < this.mutations.length; i++) {
+      balance += this.mutations[i].amount
+    }
+    return balance
+  }
+  prepend (other: AccountHistoryChunk) {
+    if (other.startBalance) {
+      if (this.startBalance) {
+        if (this.startBalance.unit !== other.startBalance.unit) {
+          throw new Error ('start balance units don\'t match!')
+        }
+        const otherEndBalance = other.getEndBalance()
+        if (otherEndBalance !== this.startBalance.amount) {
+          throw new Error(`other start balance would lead to ${otherEndBalance} instead of ${this.startBalance.amount} at ${this.startDate}`)
+        }
+      }
+      this.startBalance = other.startBalance
+    }
+    if (this.startDate <= other.startDate) {
+      throw new Error('nothing to prepend!')
+    }
+    if (this.startDate !== other.endDate) {
+      throw new Error('prepend not ajacent!')
+    }
+    this.startDate = other.startDate
+    this.mutations = other.mutations.concat(this.mutations)
+    this.importedFrom = other.importedFrom.concat(this.importedFrom.map(i => new ImportDetails({
+      fileId: i.fileId,
+      parserName: i.parserName,
+      parserVersion: i.parserVersion,
+      firstAffected: i.firstAffected + other.mutations.length,
+      lastAffected: i.lastAffected + other.mutations.length,
+    })))
+  }
+  append (other: AccountHistoryChunk) {
+    if (other.startBalance) {
+      if (this.startBalance) {
+        if (this.startBalance.unit !== other.startBalance.unit) {
+          throw new Error ('start balance units don\'t match!')
+        }
+        const thisEndBalance = this.getEndBalance()
+        if (thisEndBalance !== other.startBalance.amount) {
+          throw new Error(`other start balance would lead to ${thisEndBalance} instead of ${other.startBalance.amount} at ${this.endDate}`)
+        }
+      }
+      this.startBalance = other.startBalance
+    }
+    if (this.endDate >= other.endDate) {
+      throw new Error('nothing to append!')
+    }
+    if (this.endDate !== other.startDate) {
+      throw new Error('prepend not ajacent!')
+    }
+    this.endDate = other.endDate
+    this.mutations = this.mutations.concat(other.mutations)
+    this.importedFrom = this.importedFrom.concat(other.importedFrom.map(i => new ImportDetails({
+      fileId: i.fileId,
+      parserName: i.parserName,
+      parserVersion: i.parserVersion,
+      firstAffected: i.firstAffected + this.mutations.length,
+      lastAffected: i.lastAffected + this.mutations.length,
+    })))
+  }
+
+  mixIn (other: AccountHistoryChunk) {
+    // TODO: implement
+  }
+  addData (other: AccountHistoryChunk) {
+    if (other.endDate < this.startDate) {
+      throw new Error('other ends before this starts')
+    }
+    if (other.startDate > this.endDate) {
+      throw new Error('other starts after this ends')
+    }
+    let mixIn = other
+    let prepend
+    let append
+    if (other.startDate < this.startDate) {
+      [ prepend, mixIn ] = mixIn.splitAt(this.startDate)
+      this.prepend(prepend)
+    }
+    if (other.endDate > this.endDate) {
+      [ mixIn, append ] = mixIn.splitAt(this.endDate)
+      this.append(append)
+    }
+    this.mixIn(mixIn)
+  }
+}
+
+// parser should output mutations or mutationviews? or should it call a 'setDayMutations' callback?
