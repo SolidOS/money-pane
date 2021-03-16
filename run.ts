@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs'
+import { mutationToCategory } from './src/expenseCategories'
 import { AccountHistoryChunk } from './src/Ledger'
 import { parseAsnbankCsv } from './src/parsers/asnbank-csv'
 import { parseAsnbankMt940 } from './src/parsers/asnbank-mt940'
@@ -29,3 +30,7 @@ Object.keys(dataRoot.files).forEach(fileName => {
 })
 
 console.log(JSON.stringify(accountHistoryChunks, null, 2))
+accountHistoryChunks[0].mutations.map(mutation => {
+  const category = mutationToCategory(mutation, dataRoot);
+  console.log(category, mutation);
+});
