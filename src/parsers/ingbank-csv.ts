@@ -1,4 +1,5 @@
 import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from "../Ledger";
+import { parseGeneric } from "./parseGeneric";
 
 const PARSER_NAME = 'ingbank-csv';
 const PARSER_VERSION = 'v0.1.0';
@@ -47,20 +48,8 @@ function parseLines(lines, csvUrl) {
     }
     objects.push(obj);
   }
-  return objects;
-}
-
-export function parseIngbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
-  let startDate = new Date('31 Dec 9999');
-  let endDate = new Date('1 Jan 100');
-  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
+  return objects.map(obj => {
     const date = toDate(obj.Date)
-    if (date < startDate) {
-      startDate = date
-    }
-    if (date > endDate) {
-      endDate = date
-    }
     return new WorldLedgerMutation({
       from: obj.Account,
       to: obj.Counterparty,
@@ -75,23 +64,15 @@ export function parseIngbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
       }
     });
   });
-  return new AccountHistoryChunk({
+}
+
+export function parseIngbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+  return parseGeneric({
+    fileBuffer,
+    fileId,
+    parseLines,
     account: 'me-ingbank',
-    startBalance: new Balance({
-      amount: 0,
-      unit: 'EUR'
-    }),
-    startDate,
-    endDate,
-    mutations,
-    importedFrom: [
-      new ImportDetails({
-        fileId,
-        parserName: PARSER_NAME,
-        parserVersion: PARSER_VERSION,
-        firstAffected: 0,
-        lastAffected: mutations.length
-      })
-    ]
+    parserName: PARSER_NAME,
+    parserVersion: PARSER_VERSION
   });
 }

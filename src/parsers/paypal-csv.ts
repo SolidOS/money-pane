@@ -1,8 +1,6 @@
 import { v4 as uuidV4 } from 'uuid'
-import { description } from '../../../../../Dropbox/work/personal finance/money-pane-private';
-import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerAccountId, WorldLedgerMutation } from "../Ledger";
-import { toDate } from "./asnbank-csv";
-
+import { AccountHistoryChunk, WorldLedgerMutation } from "../Ledger";
+import { parseGeneric } from './parseGeneric';
 
 const PARSER_NAME = 'paypal-csv';
 const PARSER_VERSION = 'v0.1.0';
@@ -29,7 +27,8 @@ const PAYPAL_CSV_COLUMNS = [
   'Reference Txn ID'
 ];
 
-function parseLines(lines, csvUrl) {
+function parseLines(lines: string[]) {
+  // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"    
   const objects = [];
   for (let i = 0; i < lines.length; i++) {
     if (lines[i] === '') {
@@ -44,7 +43,7 @@ function parseLines(lines, csvUrl) {
     }
     const obj = {
       fullInfo: '',
-      impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
+      // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
     };
     for (let i=0; i< PAYPAL_CSV_COLUMNS.length; i++) {
       obj[PAYPAL_CSV_COLUMNS[i]] = cells[i];
@@ -53,67 +52,38 @@ function parseLines(lines, csvUrl) {
     // console.log(obj);
     objects.push(obj);
   }
-  return objects
+  return objects.map(obj => {
+    let from = obj.Naam;
+    let to = 'paypal';
+    let amount = parseFloat(obj.Bruto.replace(',', '.'));
+    if (amount < 0) {
+      from = 'paypal';
+      to = obj.Naam;
+      amount = -amount;
+    }
+    return new WorldLedgerMutation({
+      from,
+      to,
+      date: new Date(`${obj.Datum} ${obj.Tijd} (${obj.Tijdzone})`), // FIXME: I think the browser will ignore the timezone and just use its own default one
+      amount,
+      unit: obj.Valuta,
+      data: {
+        halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
+        description: obj.Omschrijving,
+        impliedBy: obj.impliedBy,
+        fullInfo: obj.fullInfo
+      }
+    });
+  });
 }
 
-
 export function parsePaypalCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
-  let startDate = new Date('31 Dec 9999');
-  let endDate = new Date('1 Jan 100');
-  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
-    // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"
-    const date = new Date(`${obj.Datum} ${obj.Tijd} (${obj.Tijdzone})`); // FIXME: I think the browser will ignore the timezone and just use its own default one
-    if (date < startDate) {
-      startDate = date
-    }
-    if (date > endDate) {
-      endDate = date
-    }
-    const amount = parseFloat(obj.Bruto.replace(',', '.'));
-    const unit = obj.Valuta;
-    const data = {
-      halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
-      description: obj.Omschrijving,
-      impliedBy: obj.impliedBy,
-      fullInfo: obj.fullInfo
-    }
-    if (amount < 0) {
-      return new WorldLedgerMutation({
-        from: 'paypal',
-        to: obj.Naam,
-        date,
-        amount: -amount,
-        unit,
-        data
-      });
-    } else {
-      return new WorldLedgerMutation({
-        from: obj.Naam,
-        to: 'paypal',
-        date,
-        amount,
-        unit,
-        data
-      });
-    }
-  });
-  return new AccountHistoryChunk({
+  return parseGeneric({
+    fileBuffer,
+    fileId,
+    parseLines,
     account: 'me-paypal',
-    startBalance: new Balance({
-      amount: 0,
-      unit: 'EUR'
-    }),
-    startDate,
-    endDate,
-    mutations,
-    importedFrom: [
-      new ImportDetails({
-        fileId,
-        parserName: PARSER_NAME,
-        parserVersion: PARSER_VERSION,
-        firstAffected: 0,
-        lastAffected: mutations.length
-      })
-    ]
+    parserName: PARSER_NAME,
+    parserVersion: PARSER_VERSION
   });
 }
