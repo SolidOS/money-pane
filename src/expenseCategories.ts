@@ -57,5 +57,8 @@ export function mutationToCategory(mutation, dataRoot) {
   if (mutation.data.iban) {
     return ibanToCategory(mutation.data.iban, mutation.data.description, mutation.data.fullTransaction, dataRoot);
   }
-  return descriptionToCategory(mutation.data.description, mutation.data.fullTransaction, dataRoot);
+  if (mutation.data.description) {
+    return descriptionToCategory(mutation.data.description, mutation.data.fullTransaction, dataRoot);
+  }
+  return 'NotEnoughData'
 }

@@ -1,5 +1,9 @@
 import { v4 as uuidV4 } from 'uuid'
+import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger';
 import { toDate } from './asnbank-csv';
+
+const PARSER_NAME = 'ing-creditcard-scrape';
+const PARSER_VERSION = 'v0.1.0';
 
 function isYear(str) {
   let asNumber = parseInt(str, 10);
@@ -76,20 +80,54 @@ function parseLines(lines, scrapeFileUrl) {
   return entries;
 }
 
-export function importIngCcScrape(text: string, filePath: string) {
-  return parseLines(text.split('\n'), filePath).map(obj => {
-    return {
+function getAmount(amountStr: string) {
+  const match = /.(.*),(.*)EUR/g.exec(amountStr)
+  if (match === null) {
+    return 0
+  }
+  return parseFloat(`${match[1]}.${match[2]}`)
+}
+
+export function parseIngCreditcardScrape ({ fileBuffer, fileId }): AccountHistoryChunk {
+  let startDate = new Date('31 Dec 9999');
+  let endDate = new Date('1 Jan 100');
+  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
+    if (obj.date < startDate) {
+      startDate = obj.date
+    }
+    if (obj.date > endDate) {
+      endDate = obj.date
+    }
+    console.log('parsing amount', obj.amount)
+    return new WorldLedgerMutation({
       from: 'ING Creditcard',
       to: 'Counterparty',
       date: obj.date,
-      amount: -parseFloat(obj.amount),
+      amount: getAmount(obj.amount),
       unit: 'EUR',
-      halfTradeId: `ing-bank-cc-${obj.date}-${uuidV4()}`,
-      description: obj.description
-    }
-  })
-}
-
-export function parseIngCreditcardScrape ({ fileBuffer, fileId }) {
-  console.log('implement me!')
+      data: {
+        halfTradeId: `ing-bank-cc-${obj.date}-${uuidV4()}`,
+        description: obj.description
+      }
+    })
+  });
+  return new AccountHistoryChunk({
+    account: 'me-ing-creditcard',
+    startBalance: new Balance({
+      amount: 0,
+      unit: 'EUR'
+    }),
+    startDate,
+    endDate,
+    mutations,
+    importedFrom: [
+      new ImportDetails({
+        fileId,
+        parserName: PARSER_NAME,
+        parserVersion: PARSER_VERSION,
+        firstAffected: 0,
+        lastAffected: mutations.length
+      })
+    ]
+  });
 }

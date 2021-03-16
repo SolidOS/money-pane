@@ -32,5 +32,5 @@ Object.keys(dataRoot.files).forEach(fileName => {
 console.log(JSON.stringify(accountHistoryChunks, null, 2))
 accountHistoryChunks[0].mutations.map(mutation => {
   const category = mutationToCategory(mutation, dataRoot);
-  console.log(category, mutation);
+  // console.log(category, mutation);
 });
