@@ -1,5 +1,9 @@
 import { v4 as uuidV4 } from 'uuid'
 import { Parser as mt940Parser } from 'mt940js'
+import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger'
+
+const PARSER_NAME = 'mt940-asnbank';
+const PARSER_VERSION = 'v0.1.0';
 
 const parser = new mt940Parser()
 
@@ -51,12 +55,39 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
   return `iban-${tegenrekening}`
 }
 
-export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot }) {
+export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot }): AccountHistoryChunk {
   const statements = parser.parse(fileBuffer)
-  
-  const converted = []
+  let account: string
+  let startDate: Date
+  let endDate: Date
+  let startBalance: Balance
+  let lastStatementNumber: number
+  const mutations: WorldLedgerMutation[] = []
   for (let i = 0; i < statements.length; i++) {
     const s = statements[i]
+    if (!account) {
+      account = s.accountIdentification;
+    } else if (account !== s.accountIdentification) {
+      console.warn(`WARNING: extraneous statement about account ${s.accountIdentification} instead of ${account}`);
+      console.log(s)
+      process.exit(12)
+    }
+    if (!startDate) {
+      startDate = s.openingBalanceDate;
+      startBalance = new Balance({
+        amount: s.openingBalance,
+        unit: s.currency
+      });
+    } else if (parseInt(s.number.statement) !== lastStatementNumber + 1) {
+      console.warn(`WARNING: Statements not contiguous ${s.number.statement} instead of ${lastStatementNumber}+1`);
+      console.log(s)
+      // process.exit(12)
+    }
+    if (s.number.sequence !== '1') {
+      console.warn(`WARNING! Statement ${s.number.statement} contains a sequence of multiple "pages", now looking at page ${s.number.sequence}`)
+    }
+    lastStatementNumber = parseInt(s.number.statement);
+    endDate = s.closingBalanceDate;
     for (let j = 0; j < s.transactions.length; j++) {
       const t = s.transactions[j]
       if (Math.abs(t.amount) !== 2134.1) {
@@ -64,7 +95,7 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot }) {
       }
       // console.log('transaction:', t)
       let expenseCategory
-      let counterParty
+      let counterParty: string = 'Counter Party'
       const description = t.details.split('\n').join('').trim()
       if (['NBEA', 'NBTL', 'NCOR'].indexOf(t.transactionType) !== -1) {
         const matches = /(.*)MCC:([0-9]*)(.*)/g.exec(description)
@@ -108,28 +139,34 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot }) {
         expenseCategory = t.transactionType
       }
       const halfTradeId = `from-asnbank-mt940-${fileId}-${i}-${j}`
-      converted.push({
+      mutations.push(new WorldLedgerMutation({
         from: s.accountIdentification,
-        to: 'Counterparty',
+        to: counterParty,
         date: t.date,
-        amount: -t.amount,
-        unit: 'EUR',
-        halfTradeId,
-        expenseCategory,
-        transaction: t
-      })
-      // addToFullRecord({
-      //   date: t.date,
-      //   amount: t.amount,
-      //   thisAccount: s.accountIdentification,
-      //   otherAccount: counterParty || expenseCategory,
-      //   fileId,
-      //   halfTradeId
-      // })
+        amount: t.amount,
+        unit: startBalance.unit,
+        data: {
+          halfTradeId,
+          expenseCategory,
+          transaction: t
+        }
+      }))
     }
   }
-  return {
-    theseExpenses: converted
-  }
+  return new AccountHistoryChunk({
+    account,
+    startDate,
+    endDate,
+    mutations,
+    startBalance,
+    importedFrom: [
+      new ImportDetails({
+        fileId,
+        parserName: PARSER_NAME,
+        parserVersion: PARSER_VERSION,
+        firstAffected: 0,
+        lastAffected: mutations.length
+      })
+    ]
+  });
 }
-

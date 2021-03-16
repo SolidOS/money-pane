@@ -152,6 +152,10 @@ export class WorldLedgerAccountId {
 export class Balance {
   amount: number // in the 'obvious' (FIXME) direction, e.g. what the bank owes its customer.
   unit: string // e.g. the string 'EUR' or 
+  constructor(options: { amount: number, unit: string }) {
+    this.amount = options.amount;
+    this.unit = options.unit;
+  }
 }
 
 export class ImportDetails {

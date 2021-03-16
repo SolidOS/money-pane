@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs'
+import { AccountHistoryChunk } from './src/Ledger'
 import { parseAsnbankCsv } from './src/parsers/asnbank-csv'
 import { parseAsnbankMt940 } from './src/parsers/asnbank-mt940'
 import { parseIngCreditcardScrape } from './src/parsers/ing-creditcard-scrape'
@@ -9,7 +10,7 @@ import { parseWieBetaaltWat } from './src/parsers/wiebetaaltwat'
 // eslint-disable-next-line import/no-absolute-path
 const dataRoot = require(process.env.DATA_ROOT)
 
-let converted = []
+let accountHistoryChunks: AccountHistoryChunk[] = []
 const parsers = {
   'asnbank-csv': parseAsnbankCsv,
   'asnbank-mt940': parseAsnbankMt940,
@@ -22,9 +23,9 @@ const parsers = {
 Object.keys(dataRoot.files).forEach(fileName => {
   const fileBuffer = readFileSync(fileName, 'utf8')
   const parser = parsers[dataRoot.files[fileName]]
-  const { theseExpenses } = parser({ fileBuffer, fileId: fileName, dataRoot })
-  converted = converted.concat(theseExpenses)
-  console.log(`Parsed ${fileName} with ${theseExpenses.length} statements, total now ${converted.length}`)
+  const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName, dataRoot })
+  accountHistoryChunks.push(chunk)
+    console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
 })
 
-console.log(JSON.stringify(converted, null, 2))
+console.log(JSON.stringify(accountHistoryChunks, null, 2))
