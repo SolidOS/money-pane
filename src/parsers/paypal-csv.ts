@@ -82,6 +82,6 @@ export function importPaypalCsv(text: string, filePath: string): HalfTrade[] {
   })
 }
 
-export function parsePaypalCsv ({ fileBuffer, fileId, dataRoot }) {
+export function parsePaypalCsv ({ fileBuffer, fileId }) {
   console.log('implement me!')
 }

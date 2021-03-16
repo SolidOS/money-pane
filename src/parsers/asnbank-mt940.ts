@@ -7,7 +7,7 @@ const PARSER_VERSION = 'v0.1.0';
 
 const parser = new mt940Parser()
 
-export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot }): AccountHistoryChunk {
+export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk {
   const statements = parser.parse(fileBuffer)
   let account: string
   let startDate: Date

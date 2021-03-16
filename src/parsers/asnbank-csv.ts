@@ -1,4 +1,7 @@
-import { HalfTrade, SettledPurchase, Shop } from '../Ledger'
+import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, SettledPurchase, Shop, WorldLedgerMutation } from '../Ledger'
+
+const PARSER_NAME = 'asnbank-csv';
+const PARSER_VERSION = 'v0.1.0';
 
 function capitalize(str) {
   let truncated
@@ -546,22 +549,42 @@ export function parseAsnCsv(csv: string, csvUrl: string): HalfTrade[] {
   return ret
 }
 
-export function importAsnCsv(csv: string, filePath: string): HalfTrade[] {
-  return parseCsv(csv, ASN_BANK_CSV_COLUMNS, filePath).map(obj => {
-    return {
+
+export function parseAsnbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+  let startDate = new Date('31/12/9999');
+  let endDate = new Date('1/1/1');
+  const mutations = parseCsv(fileBuffer.toString(), ASN_BANK_CSV_COLUMNS, fileId).map(obj => {
+    return new WorldLedgerMutation({
       from: obj.opdrachtgeversrekening,
       to: obj.tegenrekeningnummer,
       date: toDate(obj.boekingsdatum),
-      amount: -parseFloat(obj.transactiebedrag),
+      amount: parseFloat(obj.transactiebedrag),
       unit: obj.valutasoortMutatie,
-      halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-      description: `${obj.globaleTransactiecode} transaction`,
-      impliedBy: obj.impliedBy,
-      fullInfo: obj.fullInfo
-    }
-  })
-}
-
-export function parseAsnbankCsv ({ fileBuffer, fileId, dataRoot }) {
-  console.log('implement me!')
+      data: {
+        halfTradeId: `asn-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+        description: `${obj.globaleTransactiecode} transaction`,
+        impliedBy: obj.impliedBy,
+        fullInfo: obj.fullInfo
+      }
+    });
+  });
+  return new AccountHistoryChunk({
+    account: 'me-asnbank',
+    startBalance: new Balance({
+      amount: 0,
+      unit: 'EUR'
+    }),
+    startDate,
+    endDate,
+    mutations,
+    importedFrom: [
+      new ImportDetails({
+        fileId,
+        parserName: PARSER_NAME,
+        parserVersion: PARSER_VERSION,
+        firstAffected: 0,
+        lastAffected: mutations.length
+      })
+    ]
+  });
 }
