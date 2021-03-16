@@ -1,5 +1,7 @@
-import { HalfTrade } from "../Ledger";
-import { toDate } from "./asnbank-csv";
+import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from "../Ledger";
+
+const PARSER_NAME = 'ingbank-csv';
+const PARSER_VERSION = 'v0.1.0';
 
 // "Date";"Name / Description";"Account";"Counterparty";"Code";"Debit/credit";"Amount (EUR)";"Transaction type";"Notifications";"Resulting balance";"Tag"
 const ING_BANK_CSV_COLUMNS = [
@@ -16,13 +18,22 @@ const ING_BANK_CSV_COLUMNS = [
   'Tag'
 ];
 
+function toDate(str: string) {
+  const year = parseInt(str.substring(0, 4));
+  const month = parseInt(str.substring(4, 6));
+  const day = parseInt(str.substring(6, 8));
+  // console.log(str, year, month, day);
+  return new Date(year, month, day);
+}
+
 function parseLines(lines, csvUrl) {
   const objects = [];
   for (let i = 0; i < lines.length; i++) {
     if (lines[i] === '') {
       continue;
     }
-    const cells = lines[i].split(';');
+    const cells = lines[i].split(';').map((c: string) => c.substring(1, c.length - 2));
+    // console.log(cells)
     if (cells.length !== ING_BANK_CSV_COLUMNS.length) {
       throw new Error('number of columns doesn\'t match!');
     }
@@ -39,22 +50,48 @@ function parseLines(lines, csvUrl) {
   return objects;
 }
 
-export function importIngCsv(text: string, filePath: string): HalfTrade[] {
-  return parseLines(text.split('\n'), filePath).map(obj => {
-    return {
+export function parseIngbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+  let startDate = new Date('31 Dec 9999');
+  let endDate = new Date('1 Jan 100');
+  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
+    const date = toDate(obj.Date)
+    if (date < startDate) {
+      startDate = date
+    }
+    if (date > endDate) {
+      endDate = date
+    }
+    return new WorldLedgerMutation({
       from: obj.Account,
       to: obj.Counterparty,
-      date: toDate(obj.Date),
-      amount: -parseFloat(obj['Amount (EUR)']),
+      date,
+      amount: parseFloat(obj['Amount (EUR)'].split(',').join('.')),
       unit: 'EUR',
-      halfTradeId: `ing-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-      description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
-      impliedBy: obj.impliedBy,
-      fullInfo: obj.fullInfo
-    }
-  })
-}
-
-export function parseIngbankCsv ({ fileBuffer, fileId }) {
-  console.log('implement me!')
+      data: {
+        halfTradeId: `ing-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+        description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+        impliedBy: obj.impliedBy,
+        fullInfo: obj.fullInfo
+      }
+    });
+  });
+  return new AccountHistoryChunk({
+    account: 'me-ingbank',
+    startBalance: new Balance({
+      amount: 0,
+      unit: 'EUR'
+    }),
+    startDate,
+    endDate,
+    mutations,
+    importedFrom: [
+      new ImportDetails({
+        fileId,
+        parserName: PARSER_NAME,
+        parserVersion: PARSER_VERSION,
+        firstAffected: 0,
+        lastAffected: mutations.length
+      })
+    ]
+  });
 }

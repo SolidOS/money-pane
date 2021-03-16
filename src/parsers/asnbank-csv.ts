@@ -60,6 +60,7 @@ function ibanToCategory(tegenrekening: string, omschrijving: string) {
 }
 
 export function toDate(str) {
+  console.log('toDate', str)
   const parts = str.split('-') // e.g. '23-11-2020'
   const americanDate = `${parts[1]}-${parts[0]}=${parts[2]}` // e.g. '11-23-2020'
   return new Date(`${parts[1]}-${parts[0]}=${parts[2]}`)
@@ -548,7 +549,6 @@ export function parseAsnCsv(csv: string, csvUrl: string): HalfTrade[] {
     .reduce((acc: HalfTrade[], val: HalfTrade[]): HalfTrade[] => acc.concat(val), []); // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
   return ret
 }
-
 
 export function parseAsnbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
   let startDate = new Date('31/12/9999');

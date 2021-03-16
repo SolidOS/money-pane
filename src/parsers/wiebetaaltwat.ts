@@ -85,8 +85,8 @@ function parseLines(lines, scrapeFileUrl) {
 }
 
 export function parseWieBetaaltWat ({ fileBuffer, fileId }) {
-  let startDate = new Date('31/12/9999');
-  let endDate = new Date('1/1/1');
+  let startDate = new Date('31 Dec 9999');
+  let endDate = new Date('1 Jan 100');
   const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
     const date = toDate(obj.date);
     if (date < startDate) {
