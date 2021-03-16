@@ -1,6 +1,9 @@
 import { v4 as uuidV4 } from 'uuid'
-import { HalfTrade } from '../Ledger';
+import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from '../Ledger';
 import { toDate } from "./asnbank-csv";
+
+const PARSER_NAME = 'wiebetaaltwat';
+const PARSER_VERSION = 'v0.1.0';
 
 function parseWbwToParts(amount, tos) {
   let total = 0;
@@ -81,22 +84,48 @@ function parseLines(lines, scrapeFileUrl) {
   return entries;
 }
 
-export function importWiebetaaltwatScrape(text: string, filePath: string): HalfTrade[] {
-  return parseLines(text.split('\n'), filePath).map(obj => {
-    return {
+export function parseWieBetaaltWat ({ fileBuffer, fileId }) {
+  let startDate = new Date('31/12/9999');
+  let endDate = new Date('1/1/1');
+  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
+    const date = toDate(obj.date);
+    if (date < startDate) {
+      startDate = date
+    }
+    if (date > endDate) {
+      endDate = date
+    }
+    return new WorldLedgerMutation({
       from: obj.from,
       to: obj.to,
-      date: toDate(obj.date),
+      date,
       amount: obj.amount,
       unit: 'EUR',
-      halfTradeId: `wiebetaaltwat-${obj.date}-${obj.from}-${obj.to}-${uuidV4()}`,
-      description: obj.description,
-      impliedBy: obj.impliedBy,
-      fullInfo: obj.fullInfo
-    }
-  })
-}
-
-export function parseWieBetaaltWat ({ fileBuffer, fileId, dataRoot, addToFullRecord }) {
-  console.log('implement me!')
+      data: {
+        halfTradeId: `wiebetaaltwat-${obj.date}-${obj.from}-${obj.to}-${uuidV4()}`,
+        description: obj.description,
+        impliedBy: obj.impliedBy,
+        fullInfo: obj.fullInfo
+      }
+    })
+  });
+  return new AccountHistoryChunk({
+    account: 'me-wie-betaalt-wat',
+    startBalance: new Balance({
+      amount: 0,
+      unit: 'EUR'
+    }),
+    startDate,
+    endDate,
+    mutations,
+    importedFrom: [
+      new ImportDetails({
+        fileId,
+        parserName: PARSER_NAME,
+        parserVersion: PARSER_VERSION,
+        firstAffected: 0,
+        lastAffected: mutations.length
+      })
+    ]
+  });
 }

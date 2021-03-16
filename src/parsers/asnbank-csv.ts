@@ -562,6 +562,6 @@ export function importAsnCsv(csv: string, filePath: string): HalfTrade[] {
   })
 }
 
-export function parseAsnbankCsv ({ fileBuffer, fileId, dataRoot, addToFullRecord }) {
+export function parseAsnbankCsv ({ fileBuffer, fileId, dataRoot }) {
   console.log('implement me!')
 }
