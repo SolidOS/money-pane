@@ -1,6 +1,11 @@
 import { v4 as uuidV4 } from 'uuid'
-import { HalfTrade } from "../Ledger";
+import { description } from '../../../../../Dropbox/work/personal finance/money-pane-private';
+import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerAccountId, WorldLedgerMutation } from "../Ledger";
 import { toDate } from "./asnbank-csv";
+
+
+const PARSER_NAME = 'paypal-csv';
+const PARSER_VERSION = 'v0.1.0';
 
 // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"
 const PAYPAL_CSV_COLUMNS = [
@@ -51,37 +56,64 @@ function parseLines(lines, csvUrl) {
   return objects
 }
 
-export function importPaypalCsv(text: string, filePath: string): HalfTrade[] {
-  return parseLines(text.split('\n'), filePath).map(obj => {
+
+export function parsePaypalCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+  let startDate = new Date('31 Dec 9999');
+  let endDate = new Date('1 Jan 100');
+  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
     // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"
-    if (parseFloat(obj.Bruto) > 0) {
-      return {
+    const date = new Date(`${obj.Datum} ${obj.Tijd} (${obj.Tijdzone})`); // FIXME: I think the browser will ignore the timezone and just use its own default one
+    if (date < startDate) {
+      startDate = date
+    }
+    if (date > endDate) {
+      endDate = date
+    }
+    const amount = parseFloat(obj.Bruto.replace(',', '.'));
+    const unit = obj.Valuta;
+    const data = {
+      halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
+      description: obj.Omschrijving,
+      impliedBy: obj.impliedBy,
+      fullInfo: obj.fullInfo
+    }
+    if (amount < 0) {
+      return new WorldLedgerMutation({
         from: 'paypal',
         to: obj.Naam,
-        date: new Date(`${obj.Datum} ${obj.Tijd} (${obj.Tijdzone})`), // FIXME: I think the browser will ignore the timezone and just use its own default one
-        amount: parseFloat(obj.Bruto),
-        unit: obj.Valuta,
-        halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
-        description: obj.Omschrijving,
-        impliedBy: obj.impliedBy,
-        fullInfo: obj.fullInfo
-      }
+        date,
+        amount: -amount,
+        unit,
+        data
+      });
     } else {
-      return {
-        to: 'paypal',
+      return new WorldLedgerMutation({
         from: obj.Naam,
-        date: toDate(obj.Datum),
-        amount: -parseFloat(obj.Bruto),
-        unit: obj.Valuta,
-        halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
-        description: obj.Omschrijving,
-        impliedBy: obj.impliedBy,
-        fullInfo: obj.fullInfo
-      }
+        to: 'paypal',
+        date,
+        amount,
+        unit,
+        data
+      });
     }
-  })
-}
-
-export function parsePaypalCsv ({ fileBuffer, fileId }) {
-  console.log('implement me!')
+  });
+  return new AccountHistoryChunk({
+    account: 'me-paypal',
+    startBalance: new Balance({
+      amount: 0,
+      unit: 'EUR'
+    }),
+    startDate,
+    endDate,
+    mutations,
+    importedFrom: [
+      new ImportDetails({
+        fileId,
+        parserName: PARSER_NAME,
+        parserVersion: PARSER_VERSION,
+        firstAffected: 0,
+        lastAffected: mutations.length
+      })
+    ]
+  });
 }
