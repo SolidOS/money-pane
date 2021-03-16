@@ -51,7 +51,7 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
   return `iban-${tegenrekening}`
 }
 
-export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot, addToFullRecord }) {
+export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot }) {
   const statements = parser.parse(fileBuffer)
   
   const converted = []
@@ -118,14 +118,14 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId, dataRoot, addToFullReco
         expenseCategory,
         transaction: t
       })
-      addToFullRecord({
-        date: t.date,
-        amount: t.amount,
-        thisAccount: s.accountIdentification,
-        otherAccount: counterParty || expenseCategory,
-        fileId,
-        halfTradeId
-      })
+      // addToFullRecord({
+      //   date: t.date,
+      //   amount: t.amount,
+      //   thisAccount: s.accountIdentification,
+      //   otherAccount: counterParty || expenseCategory,
+      //   fileId,
+      //   halfTradeId
+      // })
     }
   }
   return {
