@@ -37,8 +37,17 @@ Object.keys(dataRoot.hours).forEach(year => {
   accountHistoryChunks.push(chunk)
     console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
 })
-console.log(JSON.stringify(accountHistoryChunks, null, 2))
+// console.log(JSON.stringify(accountHistoryChunks, null, 2))
 accountHistoryChunks[0].mutations.map(mutation => {
   const category = mutationToCategory(mutation, dataRoot);
   // console.log(category, mutation);
 });
+
+function printMonthlyTotals(account) {
+  accountHistoryChunks.filter(chunk => chunk.account === account).forEach(chunk => {
+    const total = chunk.mutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
+    console.log('chunk!', total)
+  })
+}
+
+printMonthlyTotals('worked');
