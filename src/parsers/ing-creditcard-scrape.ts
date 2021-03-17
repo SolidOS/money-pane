@@ -1,6 +1,7 @@
 import { v4 as uuidV4 } from 'uuid'
 import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger';
 import { toDate } from './asnbank-csv';
+import { parseGeneric } from './parseGeneric';
 
 const PARSER_NAME = 'ing-creditcard-scrape';
 const PARSER_VERSION = 'v0.1.0';
@@ -38,7 +39,7 @@ function toEnglish(dateStr) {
   return `${parts[0]} ${months[parts[1]]}`;
 }
 
-function parseLines(lines, scrapeFileUrl) {
+function parseLines(lines: string[]): WorldLedgerMutation[] {
   // console.log('parsing lines', lines);
   let year = '2021';
   let date = new Date();
@@ -74,10 +75,20 @@ function parseLines(lines, scrapeFileUrl) {
       date,
       amount,
       fullInfo: lines.slice(cursorStarted, cursor),
-      impliedBy: `${scrapeFileUrl}#L${cursorStarted + 1}-L${cursor + 1}` // First line is line 1
+      // impliedBy: `${scrapeFileUrl}#L${cursorStarted + 1}-L${cursor + 1}` // First line is line 1
     });
   } while (cursor < lines.length);
-  return entries;
+  return entries.map(obj => new WorldLedgerMutation({
+    from: 'ING Creditcard',
+    to: 'Counterparty',
+    date: obj.date,
+    amount: getAmount(obj.amount),
+    unit: 'EUR',
+    data: {
+      halfTradeId: `ing-bank-cc-${obj.date}-${uuidV4()}`,
+      description: obj.description
+    }
+  }));
 }
 
 function getAmount(amountStr: string) {
@@ -89,45 +100,12 @@ function getAmount(amountStr: string) {
 }
 
 export function parseIngCreditcardScrape ({ fileBuffer, fileId }): AccountHistoryChunk {
-  let startDate = new Date('31 Dec 9999');
-  let endDate = new Date('1 Jan 100');
-  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
-    if (obj.date < startDate) {
-      startDate = obj.date
-    }
-    if (obj.date > endDate) {
-      endDate = obj.date
-    }
-    console.log('parsing amount', obj.amount)
-    return new WorldLedgerMutation({
-      from: 'ING Creditcard',
-      to: 'Counterparty',
-      date: obj.date,
-      amount: getAmount(obj.amount),
-      unit: 'EUR',
-      data: {
-        halfTradeId: `ing-bank-cc-${obj.date}-${uuidV4()}`,
-        description: obj.description
-      }
-    })
-  });
-  return new AccountHistoryChunk({
+  return parseGeneric({
+    fileBuffer,
+    fileId,
     account: 'me-ing-creditcard',
-    startBalance: new Balance({
-      amount: 0,
-      unit: 'EUR'
-    }),
-    startDate,
-    endDate,
-    mutations,
-    importedFrom: [
-      new ImportDetails({
-        fileId,
-        parserName: PARSER_NAME,
-        parserVersion: PARSER_VERSION,
-        firstAffected: 0,
-        lastAffected: mutations.length
-      })
-    ]
+    parseLines,
+    parserName: PARSER_NAME,
+    parserVersion: PARSER_VERSION
   });
 }

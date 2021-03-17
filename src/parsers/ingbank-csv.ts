@@ -19,7 +19,7 @@ const ING_BANK_CSV_COLUMNS = [
   'Tag'
 ];
 
-function toDate(str: string) {
+function toDate(str: string): Date {
   const year = parseInt(str.substring(0, 4));
   const month = parseInt(str.substring(4, 6));
   const day = parseInt(str.substring(6, 8));
@@ -27,7 +27,7 @@ function toDate(str: string) {
   return new Date(year, month, day);
 }
 
-function parseLines(lines, csvUrl) {
+function parseLines(lines: string[]): WorldLedgerMutation[] {
   const objects = [];
   for (let i = 0; i < lines.length; i++) {
     if (lines[i] === '') {
@@ -40,7 +40,7 @@ function parseLines(lines, csvUrl) {
     }
     const obj = {
       fullInfo: '',
-      impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
+      // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
     };
     for (let i=0; i< ING_BANK_CSV_COLUMNS.length; i++) {
       obj[ING_BANK_CSV_COLUMNS[i]] = cells[i];

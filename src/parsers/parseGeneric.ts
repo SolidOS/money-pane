@@ -1,9 +1,16 @@
-import { AccountHistoryChunk, Balance, ImportDetails } from "../Ledger";
+import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from "../Ledger";
 
-export function parseGeneric ({ fileBuffer, fileId, parseLines, account, parserName, parserVersion }): AccountHistoryChunk {
+export function parseGeneric (args: {
+  fileBuffer: Buffer,
+  fileId: string,
+  parseLines: (lines: string[]) => WorldLedgerMutation[],
+  account: string,
+  parserName: string,
+  parserVersion: string
+}): AccountHistoryChunk {
   let startDate = new Date('31 Dec 9999');
   let endDate = new Date('1 Jan 100');
-  const mutations = parseLines(fileBuffer.toString().split('\n'));
+  const mutations = args.parseLines(args.fileBuffer.toString().split('\n'));
   mutations.map(mutation => {
     if (mutation.date < startDate) {
       startDate = mutation.date
@@ -13,7 +20,7 @@ export function parseGeneric ({ fileBuffer, fileId, parseLines, account, parserN
     }
   });
   return new AccountHistoryChunk({
-    account,
+    account: args.account,
     startBalance: new Balance({
       amount: 0,
       unit: 'EUR'
@@ -23,9 +30,9 @@ export function parseGeneric ({ fileBuffer, fileId, parseLines, account, parserN
     mutations,
     importedFrom: [
       new ImportDetails({
-        fileId,
-        parserName,
-        parserVersion,
+        fileId: args.fileId,
+        parserName: args.parserName,
+        parserVersion: args.parserName,
         firstAffected: 0,
         lastAffected: mutations.length
       })

@@ -1,6 +1,7 @@
 import { v4 as uuidV4 } from 'uuid'
 import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from '../Ledger';
 import { toDate } from "./asnbank-csv";
+import { parseGeneric } from './parseGeneric';
 
 const PARSER_NAME = 'wiebetaaltwat';
 const PARSER_VERSION = 'v0.1.0';
@@ -56,7 +57,7 @@ function parseWbwTo(amount, tos) {
   return entries;
 }
 
-function parseLines(lines, scrapeFileUrl) {
+function parseLines(lines: string[]): WorldLedgerMutation[] {
   let cursor = 0;
   const entries = [];
   do {
@@ -71,7 +72,7 @@ function parseLines(lines, scrapeFileUrl) {
         amount: amounts[name],
         date: lines[cursor+3],
         fullInfo: lines.slice(cursor, cursor + 6),
-        impliedBy: `${scrapeFileUrl}#L${cursor + 1}-L${cursor + 5}` // First line is line 1
+        // impliedBy: `${scrapeFileUrl}#L${cursor + 1}-L${cursor + 5}` // First line is line 1
       });
       sanityCheck += amounts[name];
     });
@@ -81,20 +82,8 @@ function parseLines(lines, scrapeFileUrl) {
     }
     cursor += 6;
   } while(cursor < lines.length);
-  return entries;
-}
-
-export function parseWieBetaaltWat ({ fileBuffer, fileId }) {
-  let startDate = new Date('31 Dec 9999');
-  let endDate = new Date('1 Jan 100');
-  const mutations = parseLines(fileBuffer.toString().split('\n'), fileId).map(obj => {
+  return entries.map(obj => {
     const date = toDate(obj.date);
-    if (date < startDate) {
-      startDate = date
-    }
-    if (date > endDate) {
-      endDate = date
-    }
     return new WorldLedgerMutation({
       from: obj.from,
       to: obj.to,
@@ -102,30 +91,22 @@ export function parseWieBetaaltWat ({ fileBuffer, fileId }) {
       amount: obj.amount,
       unit: 'EUR',
       data: {
-        halfTradeId: `wiebetaaltwat-${obj.date}-${obj.from}-${obj.to}-${uuidV4()}`,
+        // halfTradeId: `wiebetaaltwat-${obj.date}-${obj.from}-${obj.to}-${uuidV4()}`,
         description: obj.description,
         impliedBy: obj.impliedBy,
         fullInfo: obj.fullInfo
       }
     })
   });
-  return new AccountHistoryChunk({
+}
+
+export function parseWieBetaaltWat ({ fileBuffer, fileId }) {
+  return parseGeneric({
+    fileBuffer,
+    fileId,
+    parserName: PARSER_NAME,
+    parserVersion: PARSER_VERSION,
     account: 'me-wie-betaalt-wat',
-    startBalance: new Balance({
-      amount: 0,
-      unit: 'EUR'
-    }),
-    startDate,
-    endDate,
-    mutations,
-    importedFrom: [
-      new ImportDetails({
-        fileId,
-        parserName: PARSER_NAME,
-        parserVersion: PARSER_VERSION,
-        firstAffected: 0,
-        lastAffected: mutations.length
-      })
-    ]
+    parseLines
   });
 }
