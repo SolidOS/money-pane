@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 import { mutationToCategory } from './src/expenseCategories'
-import { AccountHistoryChunk } from './src/Ledger'
+import { AccountHistoryChunk, WorldLedgerMutation } from './src/Ledger'
 import { parseAsnbankCsv } from './src/parsers/asnbank-csv'
 import { parseAsnbankMt940 } from './src/parsers/asnbank-mt940'
 import { HoursProject, parseHours } from './src/parsers/hours'
@@ -22,24 +22,94 @@ const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fil
   'wiebetaaltwat': parseWieBetaaltWat,
 }
 
-Object.keys(dataRoot.files).forEach((fileName: string) => {
-  const fileBuffer = readFileSync(fileName, 'utf8')
-  const parser = parsers[dataRoot.files[fileName]]
-  const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName })
-  accountHistoryChunks.push(chunk)
-    console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
-})
+function importFiles() {
+  Object.keys(dataRoot.files).forEach((fileName: string) => {
+    const fileBuffer = readFileSync(fileName, 'utf8')
+    const parser = parsers[dataRoot.files[fileName]]
+    const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName })
+    accountHistoryChunks.push(chunk)
+      console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
+  })
+}
 
-Object.keys(dataRoot.hours).forEach((yearStr: string) => {
-  const chunk: AccountHistoryChunk = parseHours({ hours: dataRoot.hours[yearStr], year: parseInt(yearStr) })
-  accountHistoryChunks.push(chunk)
-    console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
-})
-// console.log(JSON.stringify(accountHistoryChunks, null, 2))
-accountHistoryChunks[0].mutations.map(mutation => {
-  const category = mutationToCategory(mutation, dataRoot);
-  // console.log(category, mutation);
-});
+function importHours() {
+  Object.keys(dataRoot.hours).forEach((yearStr: string) => {
+    const chunk: AccountHistoryChunk = parseHours({ hours: dataRoot.hours[yearStr], year: parseInt(yearStr) })
+    accountHistoryChunks.push(chunk)
+      console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
+  })
+}
+
+function earliestStartDateFrom(chunks: AccountHistoryChunk[]) {
+  let earliest = new Date('31 December 9999');
+  chunks.forEach(chunk => {
+    if (chunk.startDate < earliest) {
+      earliest = chunk.startDate;
+    }
+  });
+  return earliest;
+}
+
+function latestEndDateFrom(chunks: AccountHistoryChunk[]) {
+  let latest = new Date('1 January 100');
+  chunks.forEach(chunk => {
+    if (chunk.endDate < latest) {
+      latest = chunk.endDate;
+    }
+  });
+  return latest;
+}
+
+function addImpliedExpenses() {
+  const expenses = new AccountHistoryChunk({
+    account: 'expenses', // hmmm
+    startDate: earliestStartDateFrom(accountHistoryChunks),
+    endDate: latestEndDateFrom(accountHistoryChunks),
+    mutations: [],
+    importedFrom: []
+  });
+  // console.log(JSON.stringify(accountHistoryChunks, null, 2))
+  accountHistoryChunks.forEach(chunk => {
+    chunk.mutations.map(mutation => {
+      const category = mutationToCategory(mutation, dataRoot);
+      expenses.mutations.push(new WorldLedgerMutation({
+        from: mutation.to,
+        to: category,
+        date: mutation.date,
+        amount: mutation.amount,
+        unit: mutation.unit,
+        data: mutation.data
+      }));
+      // console.log(category, mutation);
+    });
+  });
+  accountHistoryChunks.push(expenses);
+}
+
+function addBudgets() {
+  const budgets = new AccountHistoryChunk({
+    account: 'budgets', // hmmm
+    startDate: earliestStartDateFrom(accountHistoryChunks),
+    endDate: latestEndDateFrom(accountHistoryChunks),
+    mutations: [],
+    importedFrom: []
+  });
+  Object.keys(dataRoot.budget).forEach(budgetName => {
+    [2020, 2021].forEach(year => {
+      ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].forEach(month => {
+        budgets.mutations.push(new WorldLedgerMutation({
+          from: 'budget',
+          to: budgetName,
+          date: new Date(`1 ${month} ${year}`),
+          amount: dataRoot.budget[budgetName],
+          unit: 'EUR',
+          data: {}
+        }));   
+      });
+    });
+  });
+  accountHistoryChunks.push(budgets);
+}
 
 function printMonthlyTotals(account: string): void {
   accountHistoryChunks.filter(chunk => chunk.account === account).forEach(chunk => {
@@ -48,4 +118,13 @@ function printMonthlyTotals(account: string): void {
   })
 }
 
-printMonthlyTotals('worked');
+function run() {
+  importFiles();
+  importHours();
+  addImpliedExpenses();
+  addBudgets();
+  printMonthlyTotals('worked');
+}
+
+// ...
+run();
