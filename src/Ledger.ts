@@ -387,4 +387,35 @@ export class AccountHistoryChunk {
   }
 }
 
-// parser should output mutations or mutationviews? or should it call a 'setDayMutations' callback?
+export class MultiAccountView {
+  chunks: AccountHistoryChunk[]
+  constructor () {
+    this.chunks = []
+  }
+  addChunk(chunk) {
+    this.chunks.push(chunk);
+  }
+  getChunks() {
+    return this.chunks;
+  }
+  
+  getStartDate() {
+    let earliest = new Date('31 December 9999');
+    this.chunks.forEach(chunk => {
+      if (chunk.startDate < earliest) {
+        earliest = chunk.startDate;
+      }
+    });
+    return earliest;
+  }
+
+  getEndDate() {
+    let latest = new Date('1 January 100');
+    this.chunks.forEach(chunk => {
+      if (chunk.endDate < latest) {
+        latest = chunk.endDate;
+      }
+    });
+    return latest;
+  }
+}

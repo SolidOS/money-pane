@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 import { mutationToCategory } from './src/expenseCategories'
-import { AccountHistoryChunk, WorldLedgerMutation } from './src/Ledger'
+import { AccountHistoryChunk, MultiAccountView, WorldLedgerMutation } from './src/Ledger'
 import { parseAsnbankCsv } from './src/parsers/asnbank-csv'
 import { parseAsnbankMt940 } from './src/parsers/asnbank-mt940'
 import { HoursProject, parseHours } from './src/parsers/hours'
@@ -12,7 +12,8 @@ import { parseWieBetaaltWat } from './src/parsers/wiebetaaltwat'
 // eslint-disable-next-line import/no-absolute-path
 const dataRoot = require(process.env.DATA_ROOT)
 
-let accountHistoryChunks: AccountHistoryChunk[] = []
+const mainLedger = new MultiAccountView();
+
 const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fileId: string }) => AccountHistoryChunk } = {
   'asnbank-csv': parseAsnbankCsv,
   'asnbank-mt940': parseAsnbankMt940,
@@ -27,7 +28,7 @@ function importFiles() {
     const fileBuffer = readFileSync(fileName, 'utf8')
     const parser = parsers[dataRoot.files[fileName]]
     const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName })
-    accountHistoryChunks.push(chunk)
+    mainLedger.addChunk(chunk)
       console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
   })
 }
@@ -35,41 +36,21 @@ function importFiles() {
 function importHours() {
   Object.keys(dataRoot.hours).forEach((yearStr: string) => {
     const chunk: AccountHistoryChunk = parseHours({ hours: dataRoot.hours[yearStr], year: parseInt(yearStr) })
-    accountHistoryChunks.push(chunk)
+    mainLedger.addChunk(chunk)
       console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
   })
-}
-
-function earliestStartDateFrom(chunks: AccountHistoryChunk[]) {
-  let earliest = new Date('31 December 9999');
-  chunks.forEach(chunk => {
-    if (chunk.startDate < earliest) {
-      earliest = chunk.startDate;
-    }
-  });
-  return earliest;
-}
-
-function latestEndDateFrom(chunks: AccountHistoryChunk[]) {
-  let latest = new Date('1 January 100');
-  chunks.forEach(chunk => {
-    if (chunk.endDate < latest) {
-      latest = chunk.endDate;
-    }
-  });
-  return latest;
 }
 
 function addImpliedExpenses() {
   const expenses = new AccountHistoryChunk({
     account: 'expenses', // hmmm
-    startDate: earliestStartDateFrom(accountHistoryChunks),
-    endDate: latestEndDateFrom(accountHistoryChunks),
+    startDate: mainLedger.getStartDate(),
+    endDate: mainLedger.getEndDate(),
     mutations: [],
     importedFrom: []
   });
-  // console.log(JSON.stringify(accountHistoryChunks, null, 2))
-  accountHistoryChunks.forEach(chunk => {
+  // console.log(JSON.stringify(mainLedger.getChunks(), null, 2))
+  mainLedger.getChunks().forEach(chunk => {
     chunk.mutations.map(mutation => {
       const category = mutationToCategory(mutation, dataRoot);
       expenses.mutations.push(new WorldLedgerMutation({
@@ -83,14 +64,14 @@ function addImpliedExpenses() {
       // console.log(category, mutation);
     });
   });
-  accountHistoryChunks.push(expenses);
+  mainLedger.addChunk(expenses);
 }
 
 function addBudgets() {
   const budgets = new AccountHistoryChunk({
     account: 'budgets', // hmmm
-    startDate: earliestStartDateFrom(accountHistoryChunks),
-    endDate: latestEndDateFrom(accountHistoryChunks),
+    startDate: mainLedger.getStartDate(),
+    endDate: mainLedger.getEndDate(),
     mutations: [],
     importedFrom: []
   });
@@ -108,11 +89,11 @@ function addBudgets() {
       });
     });
   });
-  accountHistoryChunks.push(budgets);
+  mainLedger.addChunk(budgets);
 }
 
 function printMonthlyTotals(account: string): void {
-  accountHistoryChunks.filter(chunk => chunk.account === account).forEach(chunk => {
+  mainLedger.getChunks().filter(chunk => chunk.account === account).forEach(chunk => {
     const total = chunk.mutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
     console.log('chunk!', total)
   })
