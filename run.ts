@@ -92,10 +92,11 @@ function addBudgets() {
   mainLedger.addChunk(budgets);
 }
 
-function printMonthlyTotals(): void {
+function printSubView(accountsToInclude: string[]): void {
   mainLedger.getChunks().forEach(chunk => {
-    const total = chunk.mutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
-    console.log('chunk!', chunk.account, total, chunk.mutations.length, chunk.startDate, chunk.endDate)
+    const relevantMutations = chunk.mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1)));
+    const total = relevantMutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
+    console.log('chunk!', chunk.account, total, relevantMutations.length, chunk.startDate, chunk.endDate)
   })
 }
 
@@ -104,7 +105,7 @@ function run() {
   // importHours();
   // addImpliedExpenses();
   // addBudgets();
-  printMonthlyTotals();
+  printSubView();
 }
 
 // ...
