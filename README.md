@@ -8,8 +8,8 @@ You can debug with VSCode + Chrome (see `.vscode/launch.json`).
 ## Issue Tracker
 
 We're using the Solid OS native Issue Tracker for this project! \o/
-*
-[MoneyPane issue tracker](https://solidos.solidcommunity.net/Team/2021/money-pane-project/money%20pane/index.ttl#this)
+
+* [MoneyPane issue tracker](https://solidos.solidcommunity.net/Team/2021/money-pane-project/money%20pane/index.ttl#this)
 
 ## Import transaction statements from your bank
 
@@ -29,7 +29,7 @@ git merge master
 npm ci
 npm run build
 git add dist/
-git commit --no-verify -am"build"
+git commit --no-verify -am "build"
 git remote add 5apps git@5apps.com:michiel_solid-money.git
 git push 5apps deploy:master
 ```
