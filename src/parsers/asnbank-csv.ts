@@ -6,9 +6,8 @@ const PARSER_VERSION = 'v0.1.0';
 
 export function toDate(str) {
   console.log('toDate', str)
-  const parts = str.split('-') // e.g. '23-11-2020'
-  const americanDate = `${parts[1]}-${parts[0]}=${parts[2]}` // e.g. '11-23-2020'
-  return new Date(`${parts[1]}-${parts[0]}=${parts[2]}`)
+  const [day, month, year] = str.split('-') // e.g. '23-11-2020'
+  return new Date(Date.UTC(Number.parseInt(year, 10), Number.parseInt(month, 10) - 1, Number.parseInt(day, 10)))
 }
 
 // function parseAsnBankTransaction (obj): HalfTrade[] {
@@ -494,12 +493,17 @@ export function csvFileNameToData(fileName: string) {
 //   return ret
 // }
 
+export function extractIbanFromDescription(description: string) {
+  const parts = description.split("'").join('').split(' ');
+  return parts[0]
+}
+
 function parseLines (lines: string[]): WorldLedgerMutation[] {
   const mutations = parseCsv(lines, ASN_BANK_CSV_COLUMNS).map(obj => {
     return new WorldLedgerMutation({
-      from: obj.opdrachtgeversrekening,
-      to: obj.tegenrekeningnummer,
-      date: toDate(obj.boekingsdatum),
+      from: obj.tegenrekeningnummer || extractIbanFromDescription(obj.omschrijving) || 'Counter Party',
+      to: obj.opdrachtgeversrekening,
+      date: toDate(/* obj.boekingsdatum */ obj.valutadatum),
       amount: parseFloat(obj.transactiebedrag),
       unit: obj.valutasoortMutatie,
       data: {

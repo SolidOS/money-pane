@@ -1,5 +1,13 @@
 import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from "../Ledger";
 
+export function makePositive(m: WorldLedgerMutation): WorldLedgerMutation {
+  if (m.amount < 0) {
+    [m.from, m.to] = [m.to, m.from];
+    m.amount = -m.amount;
+  }
+  return m;
+}
+
 export function parseGeneric (args: {
   fileBuffer: Buffer,
   fileId: string,
@@ -27,7 +35,7 @@ export function parseGeneric (args: {
     }),
     startDate,
     endDate,
-    mutations,
+    mutations: mutations.map(makePositive),
     importedFrom: [
       new ImportDetails({
         fileId: args.fileId,

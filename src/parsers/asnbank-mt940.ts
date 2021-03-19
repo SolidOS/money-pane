@@ -1,6 +1,8 @@
 import { v4 as uuidV4 } from 'uuid'
 import { Parser as mt940Parser } from 'mt940js'
 import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger'
+import { makePositive } from './parseGeneric';
+import { extractIbanFromDescription } from './asnbank-csv';
 
 const PARSER_NAME = 'mt940-asnbank';
 const PARSER_VERSION = 'v0.1.0';
@@ -46,12 +48,12 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk 
       //   continue
       // }
 
-      let counterParty: string = 'Counter Party'
       let data: any = {
         description: t.details.split('\n').join('').trim(),
         transactionType: t.transactionType,
         fullTransaction: t
       }
+      let counterParty: string = extractIbanFromDescription(data.description)
       if (['NBEA', 'NBTL', 'NCOR'].indexOf(t.transactionType) !== -1) { // Find MCC
         const matches = /(.*)MCC:([0-9]*)(.*)/g.exec(data.description)
         if (matches !== null) {
@@ -87,14 +89,14 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk 
         console.error('Please implement parsing for transaction type ' + t.transactionType, t)
       }
       data.halfTradeId = `from-asnbank-mt940-${fileId}-${i}-${j}`
-      mutations.push(new WorldLedgerMutation({
-        from: s.accountIdentification,
-        to: counterParty,
+      mutations.push(makePositive(new WorldLedgerMutation({
+        from: counterParty,
+        to: s.accountIdentification,
         date: t.date,
         amount: t.amount,
         unit: startBalance.unit,
         data
-      }))
+      })))
     }
   }
   return new AccountHistoryChunk({

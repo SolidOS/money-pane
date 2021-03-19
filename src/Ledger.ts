@@ -204,6 +204,7 @@ export class WorldLedgerMutation {
     this.data = options.data
   }
   mixIn(other: WorldLedgerMutation) {
+    console.log('mixing in mutation', this, other);
     ['from', 'to', 'date', 'amount', 'unit'].forEach(field => {
 
       if (other[field].toString() !== this[field].toString()) {
@@ -211,8 +212,8 @@ export class WorldLedgerMutation {
       }
     })
     Object.keys(other.data).forEach(field => {
-      if (this.data[field] && this.data[field].toString() !== other.data[field].toString()) {
-        throw new Error(`data.${field} doesn\'t match!`)
+      while (this.data[field] && this.data[field].toString() !== other.data[field].toString()) {
+        field += '_'
       }
       this.data[field] = other.data[field]
     })
@@ -341,8 +342,9 @@ export class AccountHistoryChunk {
   mixIn (other: AccountHistoryChunk) {
     let firstAffected: number = -1
     for(let i = 0; i < this.mutations.length; i++) {
+      console.log('looping through this', this.mutations[i])
       if (this.mutations[i].date < other.startDate) {
-        // console.log('not overlapping yet')
+        console.log('not overlapping yet', this.mutations[i].date, other.startDate)
         continue
       }
       if (this.mutations[i].date >= other.endDate) {
@@ -354,6 +356,7 @@ export class AccountHistoryChunk {
       if (i + firstAffected >= other.mutations.length) {
         throw new Error('mutations missing at the end of mixIn!')
       }
+      console.log('aligning mutations', firstAffected)
       this.mutations[i].mixIn(other.mutations[i + firstAffected])
     }
     // console.log('not overlapping anymore')
@@ -393,6 +396,14 @@ export class MultiAccountView {
     this.chunks = []
   }
   addChunk(chunk) {
+    for (let i = 0; i < this.chunks.length; i++) {
+      if(this.chunks[i].account === chunk.account) {
+        console.log('Mixing in!', chunk.account);
+        this.chunks[i].mixIn(chunk);
+        return
+      }
+    }
+    console.log('Not mixing in!', chunk.account);
     this.chunks.push(chunk);
   }
   getChunks() {

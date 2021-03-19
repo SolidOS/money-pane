@@ -93,11 +93,18 @@ function addBudgets() {
 }
 
 function printSubView(accountsToInclude: string[]): void {
-  mainLedger.getChunks().forEach(chunk => {
-    const relevantMutations = chunk.mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1)));
+  let united = [];
+  let i=0;
+  const chunks = mainLedger.getChunks();
+  console.log('Have chunks for the following accounts:', chunks.map(c => c.account))
+  for (let i=0; i < chunks.length; i++) {
+    const relevantMutations = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1)));
+    united = united.concat(relevantMutations)
     const total = relevantMutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
-    console.log('chunk!', chunk.account, total, relevantMutations.length, chunk.startDate, chunk.endDate)
-  })
+    console.log('chunk!', chunks[i].account, total, relevantMutations.length, chunks[i].startDate, chunks[i].endDate)
+    i++;
+  }
+  // console.log(united.sort((a, b) => (a.date - b.date)));
 }
 
 function run() {
@@ -105,7 +112,7 @@ function run() {
   // importHours();
   // addImpliedExpenses();
   // addBudgets();
-  printSubView();
+  printSubView(dataRoot.myIbans);
 }
 
 // ...
