@@ -14,7 +14,7 @@ const dataRoot = require(process.env.DATA_ROOT)
 
 const mainLedger = new MultiAccountView();
 
-const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fileId: string }) => AccountHistoryChunk } = {
+const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fileId: string, details: any }) => AccountHistoryChunk } = {
   'asnbank-csv': parseAsnbankCsv,
   'asnbank-mt940': parseAsnbankMt940,
   'ing-creditcard-scrape': parseIngCreditcardScrape,
@@ -26,8 +26,8 @@ const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fil
 function importFiles() {
   Object.keys(dataRoot.files).forEach((fileName: string) => {
     const fileBuffer = readFileSync(fileName, 'utf8')
-    const parser = parsers[dataRoot.files[fileName]]
-    const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName })
+    const parser = parsers[dataRoot.files[fileName].parser]
+    const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName, details: dataRoot.files[fileName] })
     mainLedger.addChunk(chunk)
       console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
   })
@@ -92,19 +92,19 @@ function addBudgets() {
   mainLedger.addChunk(budgets);
 }
 
-function printMonthlyTotals(account: string): void {
-  mainLedger.getChunks().filter(chunk => chunk.account === account).forEach(chunk => {
+function printMonthlyTotals(): void {
+  mainLedger.getChunks().forEach(chunk => {
     const total = chunk.mutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
-    console.log('chunk!', total)
+    console.log('chunk!', chunk.account, total, chunk.mutations.length, chunk.startDate, chunk.endDate)
   })
 }
 
 function run() {
   importFiles();
-  importHours();
-  addImpliedExpenses();
-  addBudgets();
-  printMonthlyTotals('worked');
+  // importHours();
+  // addImpliedExpenses();
+  // addBudgets();
+  printMonthlyTotals();
 }
 
 // ...

@@ -66,12 +66,12 @@ function parseLines(lines: string[]): WorldLedgerMutation[] {
   });
 }
 
-export function parseIngbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parseIngbankCsv ({ fileBuffer, fileId, details }): AccountHistoryChunk {
   return parseGeneric({
     fileBuffer,
     fileId,
     parseLines,
-    account: 'me-ingbank',
+    account: details.account,
     parserName: PARSER_NAME,
     parserVersion: PARSER_VERSION
   });

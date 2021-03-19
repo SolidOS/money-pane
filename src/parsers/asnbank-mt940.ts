@@ -42,9 +42,9 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk 
     endDate = s.closingBalanceDate;
     for (let j = 0; j < s.transactions.length; j++) {
       const t = s.transactions[j]
-      if (Math.abs(t.amount) !== 2134.1) {
-        continue
-      }
+      // if (Math.abs(t.amount) !== 2134.1) {
+      //   continue
+      // }
 
       let counterParty: string = 'Counter Party'
       let data: any = {

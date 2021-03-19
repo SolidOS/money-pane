@@ -513,12 +513,12 @@ function parseLines (lines: string[]): WorldLedgerMutation[] {
   return mutations;
 }
 
-export function parseAsnbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parseAsnbankCsv ({ fileBuffer, fileId, details }): AccountHistoryChunk {
   return parseGeneric({
     fileBuffer,
     fileId,
     parseLines,
-    account: 'me-asnbank',
+    account: details.account,
     parserName: PARSER_NAME,
     parserVersion: PARSER_VERSION
   });
