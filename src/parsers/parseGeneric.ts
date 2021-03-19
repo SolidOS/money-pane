@@ -1,4 +1,4 @@
-import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from "../Ledger";
+import { WorldLedgerView, Balance, ImportDetails, WorldLedgerMutation } from "../Ledger";
 
 export function parseGeneric (args: {
   fileBuffer: Buffer,
@@ -7,7 +7,7 @@ export function parseGeneric (args: {
   account: string,
   parserName: string,
   parserVersion: string
-}): AccountHistoryChunk {
+}): WorldLedgerView {
   let startDate = new Date('31 Dec 9999');
   let endDate = new Date('1 Jan 100');
   const mutations = args.parseLines(args.fileBuffer.toString().split('\n'));
@@ -19,7 +19,8 @@ export function parseGeneric (args: {
       endDate = mutation.date
     }
   });
-  return new AccountHistoryChunk({
+  const ret = new WorldLedgerView()
+  ret.addExhaustiveChunk({
     account: args.account,
     startBalance: new Balance({
       amount: 0,
@@ -38,4 +39,5 @@ export function parseGeneric (args: {
       })
     ]
   });
+  return ret;
 }

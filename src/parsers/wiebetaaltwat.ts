@@ -1,5 +1,5 @@
 import { v4 as uuidV4 } from 'uuid'
-import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from '../Ledger';
+import { WorldLedgerView, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from '../Ledger';
 import { toDate } from "./asnbank-csv";
 import { parseGeneric } from './parseGeneric';
 

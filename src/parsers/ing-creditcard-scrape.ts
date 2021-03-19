@@ -1,5 +1,5 @@
 import { v4 as uuidV4 } from 'uuid'
-import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger';
+import { WorldLedgerView, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger';
 import { toDate } from './asnbank-csv';
 import { parseGeneric } from './parseGeneric';
 
@@ -99,7 +99,7 @@ function getAmount(amountStr: string) {
   return parseFloat(`${match[1]}.${match[2]}`)
 }
 
-export function parseIngCreditcardScrape ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parseIngCreditcardScrape ({ fileBuffer, fileId }): WorldLedgerView {
   return parseGeneric({
     fileBuffer,
     fileId,

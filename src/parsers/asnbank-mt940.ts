@@ -1,13 +1,13 @@
 import { v4 as uuidV4 } from 'uuid'
 import { Parser as mt940Parser } from 'mt940js'
-import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger'
+import { WorldLedgerView, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger'
 
 const PARSER_NAME = 'mt940-asnbank';
 const PARSER_VERSION = 'v0.1.0';
 
 const parser = new mt940Parser()
 
-export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parseAsnbankMt940 ({ fileBuffer, fileId }): WorldLedgerView {
   const statements = parser.parse(fileBuffer)
   let account: string
   let startDate: Date
@@ -97,7 +97,8 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk 
       }))
     }
   }
-  return new AccountHistoryChunk({
+  const ret = new WorldLedgerView();
+  ret.addExhaustiveChunk({
     account,
     startDate,
     endDate,
@@ -113,4 +114,5 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk 
       })
     ]
   });
+  return ret;
 }

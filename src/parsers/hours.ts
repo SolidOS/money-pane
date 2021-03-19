@@ -1,4 +1,4 @@
-import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from "../Ledger";
+import { WorldLedgerView, Balance, ImportDetails, WorldLedgerMutation } from "../Ledger";
 const PARSER_NAME = 'hours';
 const PARSER_VERSION = 'v0.1.0';
 
@@ -14,7 +14,7 @@ export type HoursProject = {
   rate?: number
   entries: Entry[]
 }
-export function parseHours (args: { hours: { [ projectName: string]: HoursProject }, year: number }): AccountHistoryChunk {
+export function parseHours (args: { hours: { [ projectName: string]: HoursProject }, year: number }): WorldLedgerView {
   const mutations: WorldLedgerMutation[] = [];
   Object.keys(args.hours).forEach((projectName: string) => {
     const project: HoursProject = args.hours[projectName];
@@ -31,7 +31,8 @@ export function parseHours (args: { hours: { [ projectName: string]: HoursProjec
       })
     }
   })
-  return new AccountHistoryChunk({
+  const ret = new WorldLedgerView();
+  ret.addExhaustiveChunk({
     account: 'worked',
     startDate: new Date(`1 January ${args.year}`),
     endDate: new Date(`1 January ${args.year + 1}`),
@@ -50,4 +51,5 @@ export function parseHours (args: { hours: { [ projectName: string]: HoursProjec
       })
     ]
   });
+  return ret;
 }

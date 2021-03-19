@@ -1,4 +1,4 @@
-import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, SettledPurchase, Shop, WorldLedgerMutation } from '../Ledger'
+import { WorldLedgerView, Balance, HalfTrade, ImportDetails, SettledPurchase, Shop, WorldLedgerMutation } from '../Ledger'
 import { parseGeneric } from './parseGeneric';
 
 const PARSER_NAME = 'asnbank-csv';
@@ -513,7 +513,7 @@ function parseLines (lines: string[]): WorldLedgerMutation[] {
   return mutations;
 }
 
-export function parseAsnbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parseAsnbankCsv ({ fileBuffer, fileId }): WorldLedgerView {
   return parseGeneric({
     fileBuffer,
     fileId,

@@ -1,5 +1,5 @@
 import { v4 as uuidV4 } from 'uuid'
-import { AccountHistoryChunk, WorldLedgerMutation } from "../Ledger";
+import { WorldLedgerView, WorldLedgerMutation } from "../Ledger";
 import { parseGeneric } from './parseGeneric';
 
 const PARSER_NAME = 'paypal-csv';
@@ -77,7 +77,7 @@ function parseLines(lines: string[]) {
   });
 }
 
-export function parsePaypalCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parsePaypalCsv ({ fileBuffer, fileId }): WorldLedgerView {
   return parseGeneric({
     fileBuffer,
     fileId,

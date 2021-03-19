@@ -1,4 +1,4 @@
-import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from "../Ledger";
+import { WorldLedgerView, Balance, HalfTrade, ImportDetails, WorldLedgerMutation } from "../Ledger";
 import { parseGeneric } from "./parseGeneric";
 
 const PARSER_NAME = 'ingbank-csv';
@@ -66,7 +66,7 @@ function parseLines(lines: string[]): WorldLedgerMutation[] {
   });
 }
 
-export function parseIngbankCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parseIngbankCsv ({ fileBuffer, fileId }): WorldLedgerView {
   return parseGeneric({
     fileBuffer,
     fileId,

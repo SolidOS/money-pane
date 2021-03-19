@@ -219,14 +219,26 @@ export class WorldLedgerMutation {
   }
 }
 
-export class AccountHistoryChunk {
+export type ExhaustiveChunk = {
   account: string // e.g. iban:NL08INGB0000000555
   startDate: Date
   endDate: Date
-  mutations: WorldLedgerMutation[] // ordered
   startBalance?: Balance
+}
+
+export class WorldLedgerView {
+  exhaustiveChunks: ExhaustiveChunk[]
+  mutations: WorldLedgerMutation[] // ordered
   importedFrom: ImportDetails[]
-  constructor (options: {
+  constructor () {
+    this.exhaustiveChunks = []
+    this.mutations = []
+    this.importedFrom = []
+  }
+  addChunk(view: WorldLedgerView) {
+    // merge things into this one
+  }
+  addExhaustiveChunk(options: {
     account: string,
     startDate: Date,
     endDate: Date,
@@ -234,18 +246,27 @@ export class AccountHistoryChunk {
     startBalance?: Balance,
     importedFrom: ImportDetails[]
   }) {
-    this.account = options.account
-    this.startBalance = options.startBalance
+    this.exhaustiveChunks.push({
+      account: options.account,
+      startBalance: options.startBalance,
+      startDate: options.startDate,
+      endDate: options.endDate
+    });
+    // fixme:
     this.mutations = options.mutations
-    this.startDate = options.startDate
-    this.endDate = options.endDate
     this.importedFrom = options.importedFrom
   }
-  splitAt(date: Date): AccountHistoryChunk[] {
+  getStartDate() {
+    return this.exhaustiveChunks[0].startDate
+  }
+  getEndDate() {
+    return this.exhaustiveChunks[0].endDate
+  }
+  splitAt(date: Date): WorldLedgerView[] {
     let balance: number
     let splitIndex: number
-    if (this.startBalance) {
-      balance = this.startBalance.amount
+    if (this.exhaustiveChunks[0].startBalance) {
+      balance = this.exhaustiveChunks[0].startBalance.amount
       for (let i = 0; i < this.mutations.length && this.mutations[i].date < date; i++) {
         balance += this.mutations[i].amount
         if (this.mutations[i].date >= date) {
@@ -253,52 +274,53 @@ export class AccountHistoryChunk {
         }
       }
     }
-    return [
-      new AccountHistoryChunk({
-        account: this.account,
-        startDate: date, // mutations are allowed >= the startDate
-        endDate: this.endDate, // mutations are allowed < the endDate
-        mutations: this.mutations.slice(0, splitIndex),
-        startBalance: { amount: balance, unit: this.startBalance.unit },
-        importedFrom: this.importedFrom
-      }),
-      new AccountHistoryChunk({
-        account: this.account,
-        startDate: this.startDate,
-        endDate: date,
-        mutations: this.mutations.slice(splitIndex),
-        startBalance: this.startBalance,
-        importedFrom: this.importedFrom
-      })
-    ]
+    const a = new WorldLedgerView();
+    a.addExhaustiveChunk({
+      account: this.exhaustiveChunks[0].account,
+      startDate: date, // mutations are allowed >= the startDate
+      endDate: this.exhaustiveChunks[0].endDate, // mutations are allowed < the endDate
+      mutations: this.mutations.slice(0, splitIndex),
+      startBalance: { amount: balance, unit: this.exhaustiveChunks[0].startBalance.unit },
+      importedFrom: this.importedFrom
+    });
+    const b = new WorldLedgerView();
+    b.addExhaustiveChunk({
+      account: this.exhaustiveChunks[0].account,
+      startDate: this.exhaustiveChunks[0].startDate,
+      endDate: date,
+      mutations: this.mutations.slice(splitIndex),
+      startBalance: this.exhaustiveChunks[0].startBalance,
+      importedFrom: this.importedFrom
+    });
+    return [ a, b ]
   }
   getEndBalance() {
-    let balance = this.startBalance.amount
+    let balance = this.exhaustiveChunks[0].startBalance.amount
     for (let i = 0; i < this.mutations.length; i++) {
       balance += this.mutations[i].amount
     }
     return balance
   }
-  prepend (other: AccountHistoryChunk) {
-    if (other.startBalance) {
-      if (this.startBalance) {
-        if (this.startBalance.unit !== other.startBalance.unit) {
+  prepend (other: WorldLedgerView) {
+    if (other.exhaustiveChunks[0].startBalance) {
+      if (this.exhaustiveChunks[0].startBalance) {
+        if (this.exhaustiveChunks[0].startBalance.unit !== other.exhaustiveChunks[0].startBalance.unit) {
           throw new Error ('start balance units don\'t match!')
         }
         const otherEndBalance = other.getEndBalance()
-        if (otherEndBalance !== this.startBalance.amount) {
-          throw new Error(`other start balance would lead to ${otherEndBalance} instead of ${this.startBalance.amount} at ${this.startDate}`)
+        if (otherEndBalance !== this.exhaustiveChunks[0].startBalance.amount) {
+          throw new Error(`other start balance would lead to ${otherEndBalance} instead of ${this.exhaustiveChunks[0].startBalance.amount} at ${this.exhaustiveChunks[0].startDate}`)
         }
       }
-      this.startBalance = other.startBalance
+      this.exhaustiveChunks[0].startBalance = other.exhaustiveChunks[0].startBalance
     }
-    if (this.startDate <= other.startDate) {
+    if (this.exhaustiveChunks[0].startDate <= other.exhaustiveChunks[0].startDate) {
       throw new Error('nothing to prepend!')
     }
-    if (this.startDate !== other.endDate) {
+    if (this.exhaustiveChunks[0].startDate !== other.exhaustiveChunks[0].endDate) {
       throw new Error('prepend not ajacent!')
     }
-    this.startDate = other.startDate
+    this.exhaustiveChunks[0].startDate = other.exhaustiveChunks[0].startDate
     this.mutations = other.mutations.concat(this.mutations)
     this.importedFrom = other.importedFrom.concat(this.importedFrom.map(i => new ImportDetails({
       fileId: i.fileId,
@@ -308,26 +330,26 @@ export class AccountHistoryChunk {
       lastAffected: i.lastAffected + other.mutations.length,
     })))
   }
-  append (other: AccountHistoryChunk) {
-    if (other.startBalance) {
-      if (this.startBalance) {
-        if (this.startBalance.unit !== other.startBalance.unit) {
+  append (other: WorldLedgerView) {
+    if (other.exhaustiveChunks[0].startBalance) {
+      if (this.exhaustiveChunks[0].startBalance) {
+        if (this.exhaustiveChunks[0].startBalance.unit !== other.exhaustiveChunks[0].startBalance.unit) {
           throw new Error ('start balance units don\'t match!')
         }
         const thisEndBalance = this.getEndBalance()
-        if (thisEndBalance !== other.startBalance.amount) {
-          throw new Error(`other start balance would lead to ${thisEndBalance} instead of ${other.startBalance.amount} at ${this.endDate}`)
+        if (thisEndBalance !== other.exhaustiveChunks[0].startBalance.amount) {
+          throw new Error(`other start balance would lead to ${thisEndBalance} instead of ${other.exhaustiveChunks[0].startBalance.amount} at ${this.exhaustiveChunks[0].endDate}`)
         }
       }
-      this.startBalance = other.startBalance
+      this.exhaustiveChunks[0].startBalance = other.exhaustiveChunks[0].startBalance
     }
-    if (this.endDate >= other.endDate) {
+    if (this.exhaustiveChunks[0].endDate >= other.exhaustiveChunks[0].endDate) {
       throw new Error('nothing to append!')
     }
-    if (this.endDate !== other.startDate) {
+    if (this.exhaustiveChunks[0].endDate !== other.exhaustiveChunks[0].startDate) {
       throw new Error('prepend not ajacent!')
     }
-    this.endDate = other.endDate
+    this.exhaustiveChunks[0].endDate = other.exhaustiveChunks[0].endDate
     this.mutations = this.mutations.concat(other.mutations)
     this.importedFrom = this.importedFrom.concat(other.importedFrom.map(i => new ImportDetails({
       fileId: i.fileId,
@@ -338,14 +360,14 @@ export class AccountHistoryChunk {
     })))
   }
 
-  mixIn (other: AccountHistoryChunk) {
+  mixIn (other: WorldLedgerView) {
     let firstAffected: number = -1
     for(let i = 0; i < this.mutations.length; i++) {
-      if (this.mutations[i].date < other.startDate) {
+      if (this.mutations[i].date < other.exhaustiveChunks[0].startDate) {
         // console.log('not overlapping yet')
         continue
       }
-      if (this.mutations[i].date >= other.endDate) {
+      if (this.mutations[i].date >= other.exhaustiveChunks[0].endDate) {
         break
       }
       if (firstAffected === -1) {
@@ -365,57 +387,24 @@ export class AccountHistoryChunk {
       lastAffected: i.lastAffected + firstAffected,
     })))
   }
-  addData (other: AccountHistoryChunk) {
-    if (other.endDate < this.startDate) {
+  addData (other: WorldLedgerView) {
+    if (other.exhaustiveChunks[0].endDate < this.exhaustiveChunks[0].startDate) {
       throw new Error('other ends before this starts')
     }
-    if (other.startDate > this.endDate) {
+    if (other.exhaustiveChunks[0].startDate > this.exhaustiveChunks[0].endDate) {
       throw new Error('other starts after this ends')
     }
     let mixIn = other
     let prepend
     let append
-    if (other.startDate < this.startDate) {
-      [ prepend, mixIn ] = mixIn.splitAt(this.startDate)
+    if (other.exhaustiveChunks[0].startDate < this.exhaustiveChunks[0].startDate) {
+      [ prepend, mixIn ] = mixIn.splitAt(this.exhaustiveChunks[0].startDate)
       this.prepend(prepend)
     }
-    if (other.endDate > this.endDate) {
-      [ mixIn, append ] = mixIn.splitAt(this.endDate)
+    if (other.exhaustiveChunks[0].endDate > this.exhaustiveChunks[0].endDate) {
+      [ mixIn, append ] = mixIn.splitAt(this.exhaustiveChunks[0].endDate)
       this.append(append)
     }
     this.mixIn(mixIn)
-  }
-}
-
-export class MultiAccountView {
-  chunks: AccountHistoryChunk[]
-  constructor () {
-    this.chunks = []
-  }
-  addChunk(chunk) {
-    this.chunks.push(chunk);
-  }
-  getChunks() {
-    return this.chunks;
-  }
-  
-  getStartDate() {
-    let earliest = new Date('31 December 9999');
-    this.chunks.forEach(chunk => {
-      if (chunk.startDate < earliest) {
-        earliest = chunk.startDate;
-      }
-    });
-    return earliest;
-  }
-
-  getEndDate() {
-    let latest = new Date('1 January 100');
-    this.chunks.forEach(chunk => {
-      if (chunk.endDate < latest) {
-        latest = chunk.endDate;
-      }
-    });
-    return latest;
   }
 }
