@@ -19,6 +19,7 @@ export function parseGeneric (args: {
   let startDate = new Date('31 Dec 9999');
   let endDate = new Date('1 Jan 100');
   const mutations = args.parseLines(args.fileBuffer.toString().split('\n'));
+  console.log(`Got ${mutations.length} mutations from parseLines`);
   mutations.map(mutation => {
     if (mutation.date < startDate) {
       startDate = mutation.date

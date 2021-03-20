@@ -92,7 +92,7 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk 
       mutations.push(makePositive(new WorldLedgerMutation({
         from: counterParty,
         to: s.accountIdentification,
-        date: t.date,
+        date: t.entryDate,
         amount: t.amount,
         unit: startBalance.unit,
         data

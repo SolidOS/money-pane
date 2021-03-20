@@ -5,7 +5,7 @@ const PARSER_NAME = 'asnbank-csv';
 const PARSER_VERSION = 'v0.1.0';
 
 export function toDate(str) {
-  console.log('toDate', str)
+  // console.log('toDate', str)
   const [day, month, year] = str.split('-') // e.g. '23-11-2020'
   return new Date(Date.UTC(Number.parseInt(year, 10), Number.parseInt(month, 10) - 1, Number.parseInt(day, 10)))
 }
@@ -503,7 +503,7 @@ function parseLines (lines: string[]): WorldLedgerMutation[] {
     return new WorldLedgerMutation({
       from: obj.tegenrekeningnummer || extractIbanFromDescription(obj.omschrijving) || 'Counter Party',
       to: obj.opdrachtgeversrekening,
-      date: toDate(/* obj.boekingsdatum */ obj.valutadatum),
+      date: toDate(obj.boekingsdatum),
       amount: parseFloat(obj.transactiebedrag),
       unit: obj.valutasoortMutatie,
       data: {

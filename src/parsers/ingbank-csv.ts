@@ -20,25 +20,27 @@ const ING_BANK_CSV_COLUMNS = [
 ];
 
 function toDate(str: string): Date {
-  const year = parseInt(str.substring(0, 4));
-  const month = parseInt(str.substring(4, 6));
-  const day = parseInt(str.substring(6, 8));
-  // console.log(str, year, month, day);
-  return new Date(year, month, day);
+  const year = Number.parseInt(str.substring(0, 4), 10);
+  const month = Number.parseInt(str.substring(4, 6), 10);
+  const day = Number.parseInt(str.substring(6, 8), 10);
+  const date = new Date(Date.UTC(year, month - 1, day))
+  // console.log('toDate', str, year, month, day, date);
+  return date;
 }
 
 function parseLines(lines: string[]): WorldLedgerMutation[] {
-  const objects = [];
-  for (let i = 0; i < lines.length; i++) {
+  const mutations = [];
+  // Top line is header, start at line 1
+  for (let i = 1; i < lines.length; i++) {
     if (lines[i] === '') {
       continue;
     }
-    const cells = lines[i].split(';').map((c: string) => c.substring(1, c.length - 2));
+    const cells = lines[i].split(';').map((c: string) => c.substring(1, c.length - 1));
     // console.log(cells)
     if (cells.length !== ING_BANK_CSV_COLUMNS.length) {
       throw new Error('number of columns doesn\'t match!');
     }
-    const obj = {
+    const obj: any = {
       fullInfo: '',
       // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
     };
@@ -46,13 +48,10 @@ function parseLines(lines: string[]): WorldLedgerMutation[] {
       obj[ING_BANK_CSV_COLUMNS[i]] = cells[i];
       obj.fullInfo += `${ING_BANK_CSV_COLUMNS[i]}: ${cells[i]},`;
     }
-    objects.push(obj);
-  }
-  return objects.map(obj => {
     const date = toDate(obj.Date)
-    return new WorldLedgerMutation({
+    mutations.push(new WorldLedgerMutation({
       from: obj.Account,
-      to: obj.Counterparty,
+      to: obj.Counterparty || 'Counter Party',
       date,
       amount: parseFloat(obj['Amount (EUR)'].split(',').join('.')),
       unit: 'EUR',
@@ -62,8 +61,9 @@ function parseLines(lines: string[]): WorldLedgerMutation[] {
         impliedBy: obj.impliedBy,
         fullInfo: obj.fullInfo
       }
-    });
-  });
+    }));
+  }
+  return mutations
 }
 
 export function parseIngbankCsv ({ fileBuffer, fileId, details }): AccountHistoryChunk {

@@ -204,10 +204,12 @@ export class WorldLedgerMutation {
     this.data = options.data
   }
   mixIn(other: WorldLedgerMutation) {
-    console.log('mixing in mutation', this, other);
-    ['from', 'to', 'date', 'amount', 'unit'].forEach(field => {
+    // console.log('mixing in mutation', this, other);
+    ['from', 'to', /* 'date', FIXME: https://github.com/solid/money-pane/issues/33 */ 'amount', 'unit'].forEach(field => {
 
       if (other[field].toString() !== this[field].toString()) {
+        console.log('while mixing in mutation:', this, other);
+
         throw new Error(`${field} doesn\'t match!`)
       }
     })
@@ -342,7 +344,7 @@ export class AccountHistoryChunk {
   mixIn (other: AccountHistoryChunk) {
     let firstAffected: number = -1
     for(let i = 0; i < this.mutations.length; i++) {
-      console.log('looping through this', this.mutations[i])
+      // console.log('looping through this', this.mutations[i])
       if (this.mutations[i].date < other.startDate) {
         console.log('not overlapping yet', this.mutations[i].date, other.startDate)
         continue
@@ -352,11 +354,11 @@ export class AccountHistoryChunk {
       }
       if (firstAffected === -1) {
         firstAffected = i
+        console.log('aligning mutations', firstAffected)
       }
       if (i + firstAffected >= other.mutations.length) {
         throw new Error('mutations missing at the end of mixIn!')
       }
-      console.log('aligning mutations', firstAffected)
       this.mutations[i].mixIn(other.mutations[i + firstAffected])
     }
     // console.log('not overlapping anymore')
