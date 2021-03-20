@@ -97,6 +97,7 @@ function printSubView(accountsToInclude: string[]): void {
   let i=0;
   const chunks = mainLedger.getChunks();
   console.log('Have chunks for the following accounts:', chunks.map(c => c.account))
+  console.log(chunks[0].mutations[0])
   for (let i=0; i < chunks.length; i++) {
     const relevantMutations = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1)));
     united = united.concat(relevantMutations)

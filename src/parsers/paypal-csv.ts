@@ -1,6 +1,7 @@
 import { v4 as uuidV4 } from 'uuid'
 import { AccountHistoryChunk, WorldLedgerMutation } from "../Ledger";
-import { parseGeneric } from './parseGeneric';
+import { makePositive, parseGeneric } from './parseGeneric';
+import { DateTime } from 'luxon';
 
 const PARSER_NAME = 'paypal-csv';
 const PARSER_VERSION = 'v0.1.0';
@@ -27,10 +28,42 @@ const PAYPAL_CSV_COLUMNS = [
   'Reference Txn ID'
 ];
 
+function toDate(dateStr: string, timeStr: string, timezoneStr: string): Date {
+  const dateStrMatches = /(.+)\/(.*)\/(.*)/g.exec(dateStr)
+  if (!dateStrMatches) {
+    return null
+  }
+  let timeStrMatches: any = /(.+):(.*):(.*)/g.exec(timeStr)
+  if (!timeStrMatches) {
+    timeStrMatches = ['00:00:00', '00', '00', '00']
+  }
+  
+  const day = Number.parseInt(dateStrMatches[1], 10);
+  const month = Number.parseInt(dateStrMatches[2], 10);
+  const year = Number.parseInt(dateStrMatches[3], 10);
+  const hour = Number.parseInt(timeStrMatches[1], 10);
+  const minute = Number.parseInt(timeStrMatches[2], 10);
+  const second = Number.parseInt(timeStrMatches[3], 10);
+  const jsDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  const dateTime = DateTime.fromObject({
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    zone: timezoneStr
+  } as any);
+  const date = dateTime.toJSDate()
+  // console.log('toDate', dateStr, timeStr, timezoneStr, year, month, day, hour, minute, second, dateTime, date);
+  return date;
+}
+
 function parseLines(lines: string[]) {
   // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"    
-  const objects = [];
-  for (let i = 0; i < lines.length; i++) {
+  const mutations = [];
+  // Top line is header, start at line 1
+  for (let i = 1; i < lines.length; i++) {
     if (lines[i] === '') {
       continue;
     }
@@ -41,7 +74,7 @@ function parseLines(lines: string[]) {
       console.log(PAYPAL_CSV_COLUMNS);
       throw new Error(`Number of columns doesn\'t match! ${cells.length} != ${PAYPAL_CSV_COLUMNS.length}`);
     }
-    const obj = {
+    const obj: any = {
       fullInfo: '',
       // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
     };
@@ -50,21 +83,14 @@ function parseLines(lines: string[]) {
       obj.fullInfo += `${PAYPAL_CSV_COLUMNS[i]}: ${cells[i]},`;
     }
     // console.log(obj);
-    objects.push(obj);
-  }
-  return objects.map(obj => {
-    let from = obj.Naam;
+    let from = obj.Naam || `${obj['Naam bank']}:${obj.Bankrekening}`;
     let to = 'paypal';
     let amount = parseFloat(obj.Bruto.replace(',', '.'));
-    if (amount < 0) {
-      from = 'paypal';
-      to = obj.Naam;
-      amount = -amount;
-    }
-    return new WorldLedgerMutation({
+    
+    mutations.push(makePositive(new WorldLedgerMutation({
       from,
       to,
-      date: new Date(`${obj.Datum} ${obj.Tijd} (${obj.Tijdzone})`), // FIXME: I think the browser will ignore the timezone and just use its own default one
+      date: toDate(obj.Datum, obj.Tijd, obj.Tijdzone),
       amount,
       unit: obj.Valuta,
       data: {
@@ -73,16 +99,17 @@ function parseLines(lines: string[]) {
         impliedBy: obj.impliedBy,
         fullInfo: obj.fullInfo
       }
-    });
-  });
+    })));
+  }
+  return mutations;
 }
 
-export function parsePaypalCsv ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parsePaypalCsv ({ fileBuffer, fileId, details }): AccountHistoryChunk {
   return parseGeneric({
     fileBuffer,
     fileId,
     parseLines,
-    account: 'me-paypal',
+    account: details.acccount,
     parserName: PARSER_NAME,
     parserVersion: PARSER_VERSION
   });
