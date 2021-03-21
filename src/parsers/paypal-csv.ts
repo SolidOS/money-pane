@@ -44,7 +44,6 @@ function toDate(dateStr: string, timeStr: string, timezoneStr: string): Date {
   const hour = Number.parseInt(timeStrMatches[1], 10);
   const minute = Number.parseInt(timeStrMatches[2], 10);
   const second = Number.parseInt(timeStrMatches[3], 10);
-  const jsDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
   const dateTime = DateTime.fromObject({
     year,
     month,

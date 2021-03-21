@@ -1,7 +1,7 @@
 import { v4 as uuidV4 } from 'uuid'
 import { AccountHistoryChunk, Balance, ImportDetails, WorldLedgerMutation } from '../Ledger';
 import { toDate } from './asnbank-csv';
-import { parseGeneric } from './parseGeneric';
+import { makePositive, parseGeneric } from './parseGeneric';
 
 const PARSER_NAME = 'ing-creditcard-scrape';
 const PARSER_VERSION = 'v0.1.0';
@@ -39,58 +39,6 @@ function toEnglish(dateStr) {
   return `${parts[0]} ${months[parts[1]]}`;
 }
 
-function parseLines(lines: string[]): WorldLedgerMutation[] {
-  // console.log('parsing lines', lines);
-  let year = '2021';
-  let date = new Date();
-  let cursor = 14;
-  const entries = [];
-  do {
-    const cursorStarted = cursor;
-    if (lines[cursor].startsWith('Periode ')) {
-      cursor += 9;
-    }
-    if (isYear(lines[cursor])) {
-      year = lines[cursor];
-      cursor++;
-    }
-    if (lines[cursor] !== '') {
-      date = new Date(`${toEnglish(lines[cursor])} ${year} UTC`);
-      cursor++;
-    }
-    if (lines[cursor] === 'EUR') {
-      cursor++;
-    }
-    if (lines[cursor] !== '') {
-      console.log(entries);
-      throw new Error(`Expected newline at line ${cursor}!`);
-    };
-    cursor++;
-    const description = lines[cursor];
-    cursor++;
-    const amount = lines[cursor];
-    cursor++;
-    entries.push({
-      description,
-      date,
-      amount,
-      fullInfo: lines.slice(cursorStarted, cursor),
-      // impliedBy: `${scrapeFileUrl}#L${cursorStarted + 1}-L${cursor + 1}` // First line is line 1
-    });
-  } while (cursor < lines.length);
-  return entries.map(obj => new WorldLedgerMutation({
-    from: 'ING Creditcard',
-    to: 'Counterparty',
-    date: obj.date,
-    amount: getAmount(obj.amount),
-    unit: 'EUR',
-    data: {
-      halfTradeId: `ing-bank-cc-${obj.date}-${uuidV4()}`,
-      description: obj.description
-    }
-  }));
-}
-
 function getAmount(amountStr: string) {
   const match = /.(.*),(.*)EUR/g.exec(amountStr)
   if (match === null) {
@@ -99,12 +47,56 @@ function getAmount(amountStr: string) {
   return parseFloat(`${match[1]}.${match[2]}`)
 }
 
-export function parseIngCreditcardScrape ({ fileBuffer, fileId }): AccountHistoryChunk {
+export function parseIngCreditcardScrape ({ fileBuffer, fileId, details }): AccountHistoryChunk {
   return parseGeneric({
     fileBuffer,
     fileId,
-    account: 'me-ing-creditcard',
-    parseLines,
+    account: details.account,
+    parseLines: (lines: string[]) => {
+      // console.log('parsing lines', lines);
+      let year = '2021';
+      let date = new Date();
+      let cursor = 14;
+      const mutations = [];
+      do {
+        const cursorStarted = cursor;
+        if (lines[cursor].startsWith('Periode ')) {
+          cursor += 9;
+        }
+        if (isYear(lines[cursor])) {
+          year = lines[cursor];
+          cursor++;
+        }
+        if (lines[cursor] !== '') {
+          date = new Date(`${toEnglish(lines[cursor])} ${year} UTC`);
+          cursor++;
+        }
+        if (lines[cursor] === 'EUR') {
+          cursor++;
+        }
+        if (lines[cursor] !== '') {
+          console.log(mutations);
+          throw new Error(`Expected newline at line ${cursor}!`);
+        };
+        cursor++;
+        const description = lines[cursor];
+        cursor++;
+        const amount = lines[cursor];
+        cursor++;
+        mutations.push(makePositive(new WorldLedgerMutation({
+          from: details.account,
+          to: (description ? description.split(' ')[0] : 'Counterparty'),
+          date,
+          amount: getAmount(amount),
+          unit: 'EUR',
+          data: {
+            description,
+            fullInfo: lines.slice(cursorStarted, cursor),
+          }
+        })));
+      } while (cursor < lines.length);
+      return mutations;
+    },
     parserName: PARSER_NAME,
     parserVersion: PARSER_VERSION
   });

@@ -97,9 +97,12 @@ function printSubView(accountsToInclude: string[]): void {
   let i=0;
   const chunks = mainLedger.getChunks();
   console.log('Have chunks for the following accounts:', chunks.map(c => c.account))
-  console.log(chunks[0].mutations[0])
   for (let i=0; i < chunks.length; i++) {
-    const relevantMutations = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1)));
+    if (accountsToInclude.indexOf(chunks[i].account) === -1) {
+      console.log(`WARNING: ${chunks[i].account} is not in the list`, accountsToInclude);
+    }
+    const relevantMutations = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) || (accountsToInclude.indexOf(m.to) !== -1)));
+    // relevantMutations.forEach(x => { console.log(x.from, x.to, (accountsToInclude.indexOf(x.from) === -1), (accountsToInclude.indexOf(x.to) === -1)); });
     united = united.concat(relevantMutations)
     const total = relevantMutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
     console.log('chunk!', chunks[i].account, total, relevantMutations.length, chunks[i].startDate, chunks[i].endDate)
