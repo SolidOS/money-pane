@@ -33,8 +33,8 @@ export function parseAsnbankMt940 ({ fileBuffer, fileId }): AccountHistoryChunk 
         unit: s.currency
       });
     } else if (parseInt(s.number.statement) !== lastStatementNumber + 1) {
-      console.warn(`WARNING: Statements not contiguous ${s.number.statement} instead of ${lastStatementNumber}+1`);
-      console.log(s)
+      // console.warn(`WARNING: Statements not contiguous ${s.number.statement} instead of ${lastStatementNumber}+1`);
+      // console.log(s)
       // process.exit(12)
     }
     if (s.number.sequence !== '1') {

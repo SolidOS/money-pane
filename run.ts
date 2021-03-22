@@ -93,7 +93,7 @@ function addBudgets() {
 }
 
 function printSubView(accountsToInclude: string[]): void {
-  let united = [];
+  let united = {};
   let i=0;
   const chunks = mainLedger.getChunks();
   console.log('Have chunks for the following accounts:', chunks.map(c => c.account))
@@ -101,14 +101,50 @@ function printSubView(accountsToInclude: string[]): void {
     if (accountsToInclude.indexOf(chunks[i].account) === -1) {
       console.log(`WARNING: ${chunks[i].account} is not in the list`, accountsToInclude);
     }
-    const relevantMutations = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) || (accountsToInclude.indexOf(m.to) !== -1)));
+    // we will look at mutations from one of our accounts to one of our other accounts.
+
+    const mutationsToSelf = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1)));
     // relevantMutations.forEach(x => { console.log(x.from, x.to, (accountsToInclude.indexOf(x.from) === -1), (accountsToInclude.indexOf(x.to) === -1)); });
-    united = united.concat(relevantMutations)
-    const total = relevantMutations.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
-    console.log('chunk!', chunks[i].account, total, relevantMutations.length, chunks[i].startDate, chunks[i].endDate)
-    i++;
+    mutationsToSelf.forEach(mutation => {
+      if (!united[mutation.from]) {
+        united[mutation.from] = {}
+      }
+      if (!united[mutation.from][mutation.to]) {
+        united[mutation.from][mutation.to] = {}
+      }
+      if (!united[mutation.from][mutation.to][mutation.date.toString()]) {
+        united[mutation.from][mutation.to][mutation.date.toString()] = {}
+      }
+      if (!united[mutation.from][mutation.to][mutation.date.toString()][mutation.amount]) {
+        united[mutation.from][mutation.to][mutation.date.toString()][mutation.amount] = {}
+      }
+      if (!united[mutation.from][mutation.to][mutation.date.toString()][mutation.amount][mutation.unit]) {
+        united[mutation.from][mutation.to][mutation.date.toString()][mutation.amount][mutation.unit] = {}
+      }
+      if (!united[mutation.from][mutation.to][mutation.date.toString()][mutation.amount][mutation.unit][chunks[i].account]) {
+        united[mutation.from][mutation.to][mutation.date.toString()][mutation.amount][mutation.unit][chunks[i].account] = []
+      }
+      united[mutation.from][mutation.to][mutation.date.toString()][mutation.amount][mutation.unit][chunks[i].account].push(mutation.data)
+    })
+    const total = mutationsToSelf.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
+    console.log('chunk!', chunks[i].account, total, mutationsToSelf.length, chunks[i].startDate, chunks[i].endDate)
   }
-  // console.log(united.sort((a, b) => (a.date - b.date)));
+  Object.keys(united).forEach(from => {
+    Object.keys(united[from]).forEach(to => {
+      Object.keys(united[from][to]).forEach(dateStr => {
+        Object.keys(united[from][to][dateStr]).forEach(amount => {
+          Object.keys(united[from][to][dateStr][amount]).forEach(unit => {
+            if (JSON.stringify(Object.keys(united[from][to][dateStr][amount][unit]).sort()) == JSON.stringify([from, to].sort())) {
+              // console.log(`[${from} => ${to} ${amount} ${unit} @ ${dateStr}]` /* , united[from][to][dateStr][amount][unit][from], united[from][to][dateStr][amount][unit][to] */);
+            } else {
+              console.log(`Not reported twice! [${from} => ${to} ${amount} ${unit} @ ${dateStr}]`, Object.keys(united[from][to][dateStr][amount][unit]));
+              Object.keys(united[from][to][dateStr][amount][unit]).forEach(reporter => console.log(`${reporter} reported:`, united[from][to][dateStr][amount][unit][reporter]));
+            }
+          })
+        })
+      })
+    })
+  })
 }
 
 function run() {

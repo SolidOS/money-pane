@@ -405,7 +405,7 @@ export class MultiAccountView {
         return
       }
     }
-    console.log('Not mixing in!', chunk.account);
+    console.log(`First chunk we see for ${chunk.account}`);
     this.chunks.push(chunk);
   }
   getChunks() {
