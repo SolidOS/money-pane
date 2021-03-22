@@ -1,4 +1,4 @@
-import { AccountHistoryChunk, Balance, HalfTrade, ImportDetails, SettledPurchase, Shop, WorldLedgerMutation } from '../Ledger'
+import { AccountHistoryChunk, WorldLedgerMutation } from '../Ledger'
 import { parseGeneric } from './parseGeneric';
 
 const PARSER_NAME = 'asnbank-csv';
