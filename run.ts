@@ -92,7 +92,7 @@ function addBudgets() {
   mainLedger.addChunk(budgets);
 }
 
-function printSubView(accountsToInclude: string[]): void {
+function printSubView(accountsToInclude: string[], startDate: Date, endDate: Date): void {
   let united = {};
   let i=0;
   const chunks = mainLedger.getChunks();
@@ -103,7 +103,7 @@ function printSubView(accountsToInclude: string[]): void {
     }
     // we will look at mutations from one of our accounts to one of our other accounts.
 
-    const mutationsToSelf = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1)));
+    const mutationsToSelf = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1) && (m.date >= startDate) && (m.date <= endDate)));
     // relevantMutations.forEach(x => { console.log(x.from, x.to, (accountsToInclude.indexOf(x.from) === -1), (accountsToInclude.indexOf(x.to) === -1)); });
     mutationsToSelf.forEach(mutation => {
       if (!united[mutation.from]) {
@@ -142,32 +142,39 @@ function printSubView(accountsToInclude: string[]): void {
               if (Object.keys(united[from][to][dateStr][amount][unit]).length === 1) {
                 const reporter = Object.keys(united[from][to][dateStr][amount][unit])[0];
                 const thisOne = { from, to, amount, unit };
-                console.log('Finding floater', thisOne);
+                // console.log('Finding floater', thisOne);
                 let matched = false;
                 for (let i = 0; i < floaters.length; i++) {
+                  // console.log('Comparing to', floaters[i], `${i} of ${floaters.length}`);
                   let floaterMatch = true;
                   ['from', 'to', 'amount', 'unit'].forEach(field => {
                     if (floaters[i][field] !== thisOne[field]) {
-                      console.log('floater no', floaters[i]);
+                      // console.log('floater no', floaters[i]);
                       floaterMatch = false;
                     }
                   });
                   if (floaterMatch) {
-                    console.log('Floater match!');
+                    // console.log('Floater match!');
                     moves.push({ from, to, dateStr, toDateStr: floaters[i].dateStr, amount, unit, reporter });
                     console.log('FLOATER-', from, to, `[${dateStr} => ${floaters[i].dateStr}]`, amount, unit, reporter)
+                    // console.log('Floaters before removal:');
+                    // floaters.forEach(floater => console.log(floater))  
                     floaters.splice(i, 1);
+                    // console.log('Floaters after removal:');
+                    // floaters.forEach(floater => console.log(floater))  
                     matched = true;
+                    break
                   }
-                  break
                 }
                 if (!matched) {
                   console.log('FLOATER+', from, to, dateStr, amount, unit, reporter)
                   floaters.push({ from, to, dateStr, amount, unit, reporter, data: united[from][to][dateStr][amount][unit][reporter] })
-                } else {
-                  console.log(`Not reported twice! [${from} => ${to} ${amount} ${unit} @ ${dateStr}]`, Object.keys(united[from][to][dateStr][amount][unit]));
-                  Object.keys(united[from][to][dateStr][amount][unit]).forEach(reporter => console.log(`${reporter} reported:`, united[from][to][dateStr][amount][unit][reporter]));
+                  // console.log('Floaters after addition:');
+                  // floaters.forEach(floater => console.log(floater))
                 }
+              } else {
+                console.log(`Not reported twice! [${from} => ${to} ${amount} ${unit} @ ${dateStr}]`, Object.keys(united[from][to][dateStr][amount][unit]));
+                Object.keys(united[from][to][dateStr][amount][unit]).forEach(reporter => console.log(`${reporter} reported:`, united[from][to][dateStr][amount][unit][reporter]));
               }
             }
           })
@@ -180,7 +187,8 @@ function printSubView(accountsToInclude: string[]): void {
     united[from][to][toDateStr][amount][unit][reporter] = united[from][to][dateStr][amount][unit][reporter];
       delete united[from][to][dateStr][amount][unit][reporter];
   });
-  console.log('Floaters left:', floaters.length);
+  console.log('Floaters left:', floaters.length, mainLedger.chunks.map(c => `${c.account}: ${c.startDate} .. ${c.endDate}`));
+  console.log(floaters);
 }
 
 function run() {
@@ -188,7 +196,8 @@ function run() {
   // importHours();
   // addImpliedExpenses();
   // addBudgets();
-  printSubView(dataRoot.myIbans);
+  // console.log(mainLedger.chunks[0].importedFrom, mainLedger.chunks[0].mutations.filter(m => (m.from === 'NL60ASNB0921503865') && (m.to === 'NL52ASNB0707159423') && (m.amount === 3000) && (m.date.toString() === 'Sun Jun 30 2019 02:00:00 GMT+0200 (Central European Summer Time)')));
+  printSubView(dataRoot.myIbans, new Date('15 November 2009'), new Date('15 March 2030'));
 }
 
 // ...
