@@ -66,6 +66,9 @@ export function parseIngbankCsv ({ fileBuffer, fileId, details }): AccountHistor
             obj.Counterparty = details.creditCardsLinked[creditCardAccountNr];
           }
         });
+        if (obj['Name / Description'] === 'PayPal (Europe) S.a.r.l. et Cie., S.C.A.') {
+          obj.Counterparty = details.paypalAccountLinked;
+        }
         mutations.push(new WorldLedgerMutation({
           from: obj.Account,
           to: obj.Counterparty || 'Counter Party',

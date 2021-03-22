@@ -38,12 +38,14 @@ function toDate(dateStr: string, timeStr: string, timezoneStr: string): Date {
     timeStrMatches = ['00:00:00', '00', '00', '00']
   }
   
-  const day = Number.parseInt(dateStrMatches[1], 10);
-  const month = Number.parseInt(dateStrMatches[2], 10);
+  const month = Number.parseInt(dateStrMatches[1], 10);
+  const day = Number.parseInt(dateStrMatches[2], 10);
   const year = Number.parseInt(dateStrMatches[3], 10);
+
   const hour = Number.parseInt(timeStrMatches[1], 10);
   const minute = Number.parseInt(timeStrMatches[2], 10);
   const second = Number.parseInt(timeStrMatches[3], 10);
+
   const dateTime = DateTime.fromObject({
     year,
     month,
@@ -92,7 +94,7 @@ export function parsePaypalCsv ({ fileBuffer, fileId, details }): AccountHistory
           from = details.counterAccount;
         }
         const to = details.account;
-        const amount = parseFloat(obj.Bruto.replace(',', '.'));
+        const amount = parseFloat(obj.Bruto.replace('.', '').replace(',', '.'));
         
         mutations.push(makePositive(new WorldLedgerMutation({
           from,
@@ -110,7 +112,7 @@ export function parsePaypalCsv ({ fileBuffer, fileId, details }): AccountHistory
       }
       return mutations;
     },
-    account: details.acccount,
+    account: details.account,
     parserName: PARSER_NAME,
     parserVersion: PARSER_VERSION
   });

@@ -199,7 +199,7 @@ function run() {
   // importHours();
   // addImpliedExpenses();
   // addBudgets();
-  printSubView(dataRoot.myIbans, new Date('1 July 2009'), new Date('15 July 2029'));
+  printSubView(dataRoot.myIbans, new Date('1 February 2018'), new Date('15 October 2030'));
 }
 
 // ...
