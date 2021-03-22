@@ -9,7 +9,9 @@ import { parseIngbankCsv } from '../parsers/ingbank-csv'
 import { parsePaypalCsv } from '../parsers/paypal-csv'
 import { parseWieBetaaltWat } from '../parsers/wiebetaaltwat'
 import { AccountHistoryChunk } from './AccountHistoryChunk'
+import { DateTime, Interval } from 'luxon'
 
+const MAX_SKEW_DAYS = 7;
 
 const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fileId: string, details: any }) => AccountHistoryChunk } = {
   'asnbank-csv': parseAsnbankCsv,
@@ -18,6 +20,14 @@ const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fil
   'ingbank-csv': parseIngbankCsv,
   'paypal-csv': parsePaypalCsv,
   'wiebetaaltwat': parseWieBetaaltWat,
+}
+
+
+function datesTooFarOff(dateStr1: string, dateStr2: string) {
+  return (Interval.fromDateTimes(
+    DateTime.fromJSDate(new Date(dateStr1)),
+    DateTime.fromJSDate(new Date(dateStr1))
+  ).length('days') > MAX_SKEW_DAYS);
 }
 
 export class MultiAccountView {
@@ -185,6 +195,10 @@ export class MultiAccountView {
                   // console.log('Finding floater', thisOne);
                   let matched = false;
                   for (let i = 0; i < floaters.length; i++) {
+                    if (datesTooFarOff(floaters[i].dateStr, dateStr)) {
+                      console.log('Dates are too far off', floaters[i].dateStr, dateStr);
+                      continue;
+                    }
                     // console.log('Comparing to', floaters[i], `${i} of ${floaters.length}`);
                     let floaterMatch = true;
                     ['from', 'to', 'amount', 'unit'].forEach(field => {
