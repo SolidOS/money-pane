@@ -93,6 +93,8 @@ function addBudgets() {
 }
 
 function printSubView(accountsToInclude: string[], startDate: Date, endDate: Date): void {
+  mainLedger.chunks.forEach(chunk => console.log(chunk.mutations.filter(m => ((m.date >= startDate) && (m.date <= endDate)))));
+
   let united = {};
   let i=0;
   const chunks = mainLedger.getChunks();
@@ -197,8 +199,7 @@ function run() {
   // importHours();
   // addImpliedExpenses();
   // addBudgets();
-  // console.log(mainLedger.chunks[0].importedFrom, mainLedger.chunks[0].mutations.filter(m => (m.from === 'NL60ASNB0921503865') && (m.to === 'NL52ASNB0707159423') && (m.amount === 3000) && (m.date.toString() === 'Sun Jun 30 2019 02:00:00 GMT+0200 (Central European Summer Time)')));
-  printSubView(dataRoot.myIbans, new Date('1 January 2019'), new Date('15 March 2030'));
+  printSubView(dataRoot.myIbans, new Date('1 July 2009'), new Date('15 July 2029'));
 }
 
 // ...

@@ -58,56 +58,58 @@ function toDate(dateStr: string, timeStr: string, timezoneStr: string): Date {
   return date;
 }
 
-function parseLines(lines: string[]) {
-  // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"    
-  const mutations = [];
-  // Top line is header, start at line 1
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i] === '') {
-      continue;
-    }
-    const cells = lines[i].substring(1, lines[i].length - 1).split('","');
-    if (cells.length !== PAYPAL_CSV_COLUMNS.length) {
-      console.log(lines[i]);
-      console.log(cells);
-      console.log(PAYPAL_CSV_COLUMNS);
-      throw new Error(`Number of columns doesn\'t match! ${cells.length} != ${PAYPAL_CSV_COLUMNS.length}`);
-    }
-    const obj: any = {
-      fullInfo: '',
-      // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
-    };
-    for (let i=0; i< PAYPAL_CSV_COLUMNS.length; i++) {
-      obj[PAYPAL_CSV_COLUMNS[i]] = cells[i];
-      obj.fullInfo += `${PAYPAL_CSV_COLUMNS[i]}: ${cells[i]},`;
-    }
-    // console.log(obj);
-    let from = obj.Naam || `${obj['Naam bank']}:${obj.Bankrekening}`;
-    let to = 'paypal';
-    let amount = parseFloat(obj.Bruto.replace(',', '.'));
-    
-    mutations.push(makePositive(new WorldLedgerMutation({
-      from,
-      to,
-      date: toDate(obj.Datum, obj.Tijd, obj.Tijdzone),
-      amount,
-      unit: obj.Valuta,
-      data: {
-        halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
-        description: obj.Omschrijving,
-        impliedBy: obj.impliedBy,
-        fullInfo: obj.fullInfo
-      }
-    })));
-  }
-  return mutations;
-}
 
 export function parsePaypalCsv ({ fileBuffer, fileId, details }): AccountHistoryChunk {
   return parseGeneric({
     fileBuffer,
     fileId,
-    parseLines,
+    parseLines: (lines: string[]) => {
+      // "Datum","Tijd","Tijdzone","Omschrijving","Valuta","Bruto","Kosten","Net","Saldo","Transactiereferentie","Van e-mailadres","Naam","Naam bank","Bankrekening","Verzendkosten","BTW","Factuurreferentie","Reference Txn ID"    
+      const mutations = [];
+      // Top line is header, start at line 1
+      for (let i = 1; i < lines.length; i++) {
+        if (lines[i] === '') {
+          continue;
+        }
+        const cells = lines[i].substring(1, lines[i].length - 1).split('","');
+        if (cells.length !== PAYPAL_CSV_COLUMNS.length) {
+          console.log(lines[i]);
+          console.log(cells);
+          console.log(PAYPAL_CSV_COLUMNS);
+          throw new Error(`Number of columns doesn\'t match! ${cells.length} != ${PAYPAL_CSV_COLUMNS.length}`);
+        }
+        const obj: any = {
+          fullInfo: '',
+          // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
+        };
+        for (let i=0; i< PAYPAL_CSV_COLUMNS.length; i++) {
+          obj[PAYPAL_CSV_COLUMNS[i]] = cells[i];
+          obj.fullInfo += `${PAYPAL_CSV_COLUMNS[i]}: ${cells[i]},`;
+        }
+        // console.log(obj);
+        let from = obj.Naam || `${obj['Naam bank']}:${obj.Bankrekening}`;
+        if (from === `${details.counterBank}:${details.counterAccount.substr(-4)}`) {
+          from = details.counterAccount;
+        }
+        const to = details.account;
+        const amount = parseFloat(obj.Bruto.replace(',', '.'));
+        
+        mutations.push(makePositive(new WorldLedgerMutation({
+          from,
+          to,
+          date: toDate(obj.Datum, obj.Tijd, obj.Tijdzone),
+          amount,
+          unit: obj.Valuta,
+          data: {
+            halfTradeId: `paypal-${obj.Date}-${uuidV4()}`,
+            description: obj.Omschrijving,
+            impliedBy: obj.impliedBy,
+            fullInfo: obj.fullInfo
+          }
+        })));
+      }
+      return mutations;
+    },
     account: details.acccount,
     parserName: PARSER_NAME,
     parserVersion: PARSER_VERSION

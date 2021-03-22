@@ -28,57 +28,60 @@ function toDate(str: string): Date {
   return date;
 }
 
-function parseLines(lines: string[]): WorldLedgerMutation[] {
-  const mutations = [];
-  // Top line is header, start at line 1
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i] === '') {
-      continue;
-    }
-    const cells = lines[i].split(';').map((c: string) => c.substring(1, c.length - 1));
-    // console.log(cells)
-    if (cells.length !== ING_BANK_CSV_COLUMNS.length) {
-      throw new Error('number of columns doesn\'t match!');
-    }
-    const obj: any = {
-      fullInfo: '',
-      // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
-    };
-    for (let i=0; i< ING_BANK_CSV_COLUMNS.length; i++) {
-      obj[ING_BANK_CSV_COLUMNS[i]] = cells[i];
-      obj.fullInfo += `${ING_BANK_CSV_COLUMNS[i]}: ${cells[i]},`;
-    }
-    const date = toDate(obj.Date)
-    let amountSign: number;
-    if (obj['Debit/credit'] === 'Credit') {
-      amountSign = -1;
-    } else if (obj['Debit/credit'] === 'Debit') {
-      amountSign = 1;
-    } else {
-      throw new Error(`Debit or Credit? "${obj['Debit/credit']}"`);
-    }
-    mutations.push(new WorldLedgerMutation({
-      from: obj.Account,
-      to: obj.Counterparty || 'Counter Party',
-      date,
-      amount: amountSign * parseFloat(obj['Amount (EUR)'].split(',').join('.')),
-      unit: 'EUR',
-      data: {
-        halfTradeId: `ing-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
-        description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
-        impliedBy: obj.impliedBy,
-        fullInfo: obj.fullInfo
-      }
-    }));
-  }
-  return mutations
-}
-
 export function parseIngbankCsv ({ fileBuffer, fileId, details }): AccountHistoryChunk {
   return parseGeneric({
     fileBuffer,
     fileId,
-    parseLines,
+    parseLines: (lines: string[]): WorldLedgerMutation[] => {
+      const mutations = [];
+      // Top line is header, start at line 1
+      for (let i = 1; i < lines.length; i++) {
+        if (lines[i] === '') {
+          continue;
+        }
+        const cells = lines[i].split(';').map((c: string) => c.substring(1, c.length - 1));
+        // console.log(cells)
+        if (cells.length !== ING_BANK_CSV_COLUMNS.length) {
+          throw new Error('number of columns doesn\'t match!');
+        }
+        const obj: any = {
+          fullInfo: '',
+          // impliedBy: `${csvUrl}#L${i + 1}` // First line is line 1
+        };
+        for (let i=0; i< ING_BANK_CSV_COLUMNS.length; i++) {
+          obj[ING_BANK_CSV_COLUMNS[i]] = cells[i];
+          obj.fullInfo += `${ING_BANK_CSV_COLUMNS[i]}: ${cells[i]},`;
+        }
+        const date = toDate(obj.Date)
+        let amountSign: number;
+        if (obj['Debit/credit'] === 'Credit') {
+          amountSign = -1;
+        } else if (obj['Debit/credit'] === 'Debit') {
+          amountSign = 1;
+        } else {
+          throw new Error(`Debit or Credit? "${obj['Debit/credit']}"`);
+        }
+        Object.keys(details.creditCardsLinked).forEach(creditCardAccountNr => {
+          if (obj['Name / Description'] === `INCASSO CREDITCARD ACCOUNTNR ${creditCardAccountNr}`) {
+            obj.Counterparty = details.creditCardsLinked[creditCardAccountNr];
+          }
+        });
+        mutations.push(new WorldLedgerMutation({
+          from: obj.Account,
+          to: obj.Counterparty || 'Counter Party',
+          date,
+          amount: amountSign * parseFloat(obj['Amount (EUR)'].split(',').join('.')),
+          unit: 'EUR',
+          data: {
+            halfTradeId: `ing-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
+            description: `${obj.globaleTransactiecode} transaction | ${obj.fullInfo}`,
+            impliedBy: obj.impliedBy,
+            fullInfo: obj.fullInfo
+          }
+        }));
+      }
+      return mutations
+    },
     account: details.account,
     parserName: PARSER_NAME,
     parserVersion: PARSER_VERSION

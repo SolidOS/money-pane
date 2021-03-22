@@ -40,11 +40,15 @@ function toEnglish(dateStr) {
 }
 
 function getAmount(amountStr: string) {
-  const match = /.(.*),(.*)EUR/g.exec(amountStr)
+  const match = /(.*),(.*)EUR/g.exec(amountStr)
   if (match === null) {
     return 0
   }
-  return parseFloat(`${match[1]}.${match[2]}`)
+  const buff = Buffer.from(match[1]);
+  if (buff[0] === 226 && buff[1] === 136) {
+    match[1] = `-${match[1].substring(1)}`;
+  }
+  return parseFloat(`${match[1]}.${match[2]}`);
 }
 
 export function parseIngCreditcardScrape ({ fileBuffer, fileId, details }): AccountHistoryChunk {
@@ -83,9 +87,13 @@ export function parseIngCreditcardScrape ({ fileBuffer, fileId, details }): Acco
         cursor++;
         const amount = lines[cursor];
         cursor++;
+        let from = (description ? description.split(' ')[0] : 'Counterparty');
+        if (from === 'AFLOSSING') {
+          from = details.counterAccount;
+        }
         mutations.push(makePositive(new WorldLedgerMutation({
-          from: details.account,
-          to: (description ? description.split(' ')[0] : 'Counterparty'),
+          from,
+          to: details.account,
           date,
           amount: getAmount(amount),
           unit: 'EUR',
