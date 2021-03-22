@@ -129,6 +129,8 @@ function printSubView(accountsToInclude: string[]): void {
     const total = mutationsToSelf.map(mutation => mutation.amount).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0)
     console.log('chunk!', chunks[i].account, total, mutationsToSelf.length, chunks[i].startDate, chunks[i].endDate)
   }
+  const floaters = [];
+  const moves = [];
   Object.keys(united).forEach(from => {
     Object.keys(united[from]).forEach(to => {
       Object.keys(united[from][to]).forEach(dateStr => {
@@ -137,14 +139,48 @@ function printSubView(accountsToInclude: string[]): void {
             if (JSON.stringify(Object.keys(united[from][to][dateStr][amount][unit]).sort()) == JSON.stringify([from, to].sort())) {
               // console.log(`[${from} => ${to} ${amount} ${unit} @ ${dateStr}]` /* , united[from][to][dateStr][amount][unit][from], united[from][to][dateStr][amount][unit][to] */);
             } else {
-              console.log(`Not reported twice! [${from} => ${to} ${amount} ${unit} @ ${dateStr}]`, Object.keys(united[from][to][dateStr][amount][unit]));
-              Object.keys(united[from][to][dateStr][amount][unit]).forEach(reporter => console.log(`${reporter} reported:`, united[from][to][dateStr][amount][unit][reporter]));
+              if (Object.keys(united[from][to][dateStr][amount][unit]).length === 1) {
+                const reporter = Object.keys(united[from][to][dateStr][amount][unit])[0];
+                const thisOne = { from, to, amount, unit };
+                console.log('Finding floater', thisOne);
+                let matched = false;
+                for (let i = 0; i < floaters.length; i++) {
+                  let floaterMatch = true;
+                  ['from', 'to', 'amount', 'unit'].forEach(field => {
+                    if (floaters[i][field] !== thisOne[field]) {
+                      console.log('floater no', floaters[i]);
+                      floaterMatch = false;
+                    }
+                  });
+                  if (floaterMatch) {
+                    console.log('Floater match!');
+                    moves.push({ from, to, dateStr, toDateStr: floaters[i].dateStr, amount, unit, reporter });
+                    console.log('FLOATER-', from, to, `[${dateStr} => ${floaters[i].dateStr}]`, amount, unit, reporter)
+                    floaters.splice(i, 1);
+                    matched = true;
+                  }
+                  break
+                }
+                if (!matched) {
+                  console.log('FLOATER+', from, to, dateStr, amount, unit, reporter)
+                  floaters.push({ from, to, dateStr, amount, unit, reporter, data: united[from][to][dateStr][amount][unit][reporter] })
+                } else {
+                  console.log(`Not reported twice! [${from} => ${to} ${amount} ${unit} @ ${dateStr}]`, Object.keys(united[from][to][dateStr][amount][unit]));
+                  Object.keys(united[from][to][dateStr][amount][unit]).forEach(reporter => console.log(`${reporter} reported:`, united[from][to][dateStr][amount][unit][reporter]));
+                }
+              }
             }
           })
         })
       })
     })
-  })
+  });
+  moves.forEach(({from, to, dateStr, toDateStr, amount, unit, reporter}) => {
+    console.log('moving', from, to, dateStr, toDateStr, amount, unit, reporter);
+    united[from][to][toDateStr][amount][unit][reporter] = united[from][to][dateStr][amount][unit][reporter];
+      delete united[from][to][dateStr][amount][unit][reporter];
+  });
+  console.log('Floaters left:', floaters.length);
 }
 
 function run() {
