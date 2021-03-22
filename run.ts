@@ -106,6 +106,7 @@ function printSubView(accountsToInclude: string[], startDate: Date, endDate: Dat
     const mutationsToSelf = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1) && (m.date >= startDate) && (m.date <= endDate)));
     // relevantMutations.forEach(x => { console.log(x.from, x.to, (accountsToInclude.indexOf(x.from) === -1), (accountsToInclude.indexOf(x.to) === -1)); });
     mutationsToSelf.forEach(mutation => {
+      // console.log(chunks[i].account, mutation);
       if (!united[mutation.from]) {
         united[mutation.from] = {}
       }
@@ -197,7 +198,7 @@ function run() {
   // addImpliedExpenses();
   // addBudgets();
   // console.log(mainLedger.chunks[0].importedFrom, mainLedger.chunks[0].mutations.filter(m => (m.from === 'NL60ASNB0921503865') && (m.to === 'NL52ASNB0707159423') && (m.amount === 3000) && (m.date.toString() === 'Sun Jun 30 2019 02:00:00 GMT+0200 (Central European Summer Time)')));
-  printSubView(dataRoot.myIbans, new Date('15 November 2009'), new Date('15 March 2030'));
+  printSubView(dataRoot.myIbans, new Date('1 January 2019'), new Date('15 March 2030'));
 }
 
 // ...

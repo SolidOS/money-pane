@@ -49,11 +49,19 @@ function parseLines(lines: string[]): WorldLedgerMutation[] {
       obj.fullInfo += `${ING_BANK_CSV_COLUMNS[i]}: ${cells[i]},`;
     }
     const date = toDate(obj.Date)
+    let amountSign: number;
+    if (obj['Debit/credit'] === 'Credit') {
+      amountSign = -1;
+    } else if (obj['Debit/credit'] === 'Debit') {
+      amountSign = 1;
+    } else {
+      throw new Error(`Debit or Credit? "${obj['Debit/credit']}"`);
+    }
     mutations.push(new WorldLedgerMutation({
       from: obj.Account,
       to: obj.Counterparty || 'Counter Party',
       date,
-      amount: parseFloat(obj['Amount (EUR)'].split(',').join('.')),
+      amount: amountSign * parseFloat(obj['Amount (EUR)'].split(',').join('.')),
       unit: 'EUR',
       data: {
         halfTradeId: `ing-bank-${obj.journaaldatum}-${obj.volgnummerTransactie}`,
