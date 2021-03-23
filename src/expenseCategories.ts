@@ -49,15 +49,19 @@ function ibanToCategory (tegenrekening, omschrijving, t, dataRoot) {
 
 export function mutationToCategory(mutation, dataRoot) {
   if (mutation.data.mcc) {
+    console.log('using mcc', mutation.data.mcc);
     return mccToCategory(mutation.data.mcc, mutation.data.fullTransaction, dataRoot);
   }
   if (mutation.data.incassant) {
+    console.log('using incassant', mutation.data.incassant);
     return incassantToCategory(mutation.data.incassant, mutation.data.fullTransaction, dataRoot);
   }
   if (mutation.data.iban) {
+    console.log('using iban', mutation.data.iban);
     return ibanToCategory(mutation.data.iban, mutation.data.description, mutation.data.fullTransaction, dataRoot);
   }
   if (mutation.data.description) {
+    console.log('using description', mutation.data.description);
     return descriptionToCategory(mutation.data.description, mutation.data.fullTransaction, dataRoot);
   }
   return 'NotEnoughData'

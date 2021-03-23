@@ -22,7 +22,6 @@ const parsers: { [parserName: string]: (args: { fileBuffer: Buffer | string, fil
   'wiebetaaltwat': parseWieBetaaltWat,
 }
 
-
 function datesTooFarOff(dateStr1: string, dateStr2: string) {
   return (Interval.fromDateTimes(
     DateTime.fromJSDate(new Date(dateStr1)),
@@ -35,7 +34,10 @@ export class MultiAccountView {
   constructor () {
     this.chunks = []
   }
-  addChunk(chunk) {
+  addChunk(chunk: AccountHistoryChunk | null) {
+    if (chunk === null) {
+      return
+    }
     for (let i = 0; i < this.chunks.length; i++) {
       if(this.chunks[i].account === chunk.account) {
         console.log('Mixing in!', chunk.account);
@@ -70,25 +72,28 @@ export class MultiAccountView {
     return latest;
   }
   
-  importFiles (files: { [fileName: string]: any }) {
+  importFiles (files: { [fileName: string]: any }, startDate: Date, endDate: Date) {
     Object.keys(files).forEach((fileName: string) => {
       const fileBuffer = readFileSync(fileName, 'utf8')
       const parser = parsers[files[fileName].parser]
-      const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName, details: files[fileName] })
+      const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName, details: files[fileName] }).restrictedTo(startDate, endDate)
       this.addChunk(chunk)
-        console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
+      console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
     })
   }
   
-  importHours (hours: any) {
+  importHours (hours: any, startDate: Date, endDate: Date) {
+    // console.log('importHours', hours);
     Object.keys(hours).forEach((yearStr: string) => {
-      const chunk: AccountHistoryChunk = parseHours({ hours: hours[yearStr], year: parseInt(yearStr) })
-      this.addChunk(chunk)
+      const chunk: AccountHistoryChunk | null = parseHours({ hours: hours[yearStr], year: parseInt(yearStr) }).restrictedTo(startDate, endDate)
+      if (chunk) {
+        this.addChunk(chunk)
         console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
+      }
     })
   }
   
-  addImpliedExpenses (dataRoot: any) {
+  addImpliedExpenses (dataRoot: any, startDate: Date, endDate: Date) {
     const expenses = new AccountHistoryChunk({
       account: 'expenses', // hmmm
       startDate: this.getStartDate(),
@@ -98,7 +103,7 @@ export class MultiAccountView {
     });
     // console.log(JSON.stringify(this.getChunks(), null, 2))
     this.getChunks().forEach(chunk => {
-      chunk.mutations.map(mutation => {
+      chunk.restrictedTo(startDate, endDate).mutations.map(mutation => {
         const category = mutationToCategory(mutation, dataRoot);
         expenses.mutations.push(new WorldLedgerMutation({
           from: mutation.to,
@@ -111,10 +116,11 @@ export class MultiAccountView {
         // console.log(category, mutation);
       });
     });
+    // console.log('got expenses!', expenses.mutations);
     this.addChunk(expenses);
   }
   
-  addBudgets (budget: any) {
+  addBudgets (budget: any, startDate: Date, endDate: Date) {
     const budgets = new AccountHistoryChunk({
       account: 'budgets', // hmmm
       startDate: this.getStartDate(),
@@ -126,8 +132,8 @@ export class MultiAccountView {
       [2020, 2021].forEach(year => {
         ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].forEach(month => {
           budgets.mutations.push(new WorldLedgerMutation({
-            from: 'budget',
-            to: budgetName,
+            from: budgetName,
+            to: 'budget',
             date: new Date(`1 ${month} ${year}`),
             amount: budget[budgetName],
             unit: 'EUR',
@@ -136,20 +142,56 @@ export class MultiAccountView {
         });
       });
     });
-    this.addChunk(budgets);
+    this.addChunk(budgets.restrictedTo(startDate, endDate));
   }
   
+  trackEquity(accountsToInclude: string[], startDate: Date, endDate: Date): void {
+    const chunks = this.getChunks();
+    const allMutations = [];
+    console.log('Have chunks for the following accounts:', chunks.map(c => c.account))
+    for (let i=0; i < chunks.length; i++) {
+      // if (accountsToInclude.indexOf(chunks[i].account) === -1) {
+      //   console.log(`WARNING: ${chunks[i].account} is not in the list`, accountsToInclude);
+      // }
+      chunks[i].mutations.forEach(m => {
+        if ((m.date >= startDate) && (m.date <= endDate)) {
+          allMutations.push(m);
+        }
+      })
+    }
+    let equity = 0;
+    const sorted = allMutations.sort((a, b) => (a.date - b.date));
+    for (let i=0; i < sorted.length; i++) {
+      const fromMe = (accountsToInclude.indexOf(sorted[i].from) !== -1);
+      const toMe = (accountsToInclude.indexOf(sorted[i].to) !== -1);
+      if (fromMe) {
+        if (toMe) {
+          console.log(`[${sorted[i].from} => ${sorted[i].to} ${sorted[i].amount} ${sorted[i].unit}] INTERNAL ${equity}`);
+        } else {
+          equity -= sorted[i].amount;
+          console.log(`[${sorted[i].from} => ${sorted[i].to} ${sorted[i].amount} ${sorted[i].unit}] OUTGOING ${equity}`);
+        }
+      } else {
+        if (toMe) {
+          equity += sorted[i].amount;
+          console.log(`[${sorted[i].from} => ${sorted[i].to} ${sorted[i].amount} ${sorted[i].unit}] INCOMING ${equity}`);
+        } else {
+          console.log(`[${sorted[i].from} => ${sorted[i].to} ${sorted[i].amount} ${sorted[i].unit}] EXTERNAL ${equity}`);
+        }
+      }
+    }
+  }
+
   printSubView(accountsToInclude: string[], startDate: Date, endDate: Date): void {
-    this.chunks.forEach(chunk => console.log(chunk.mutations.filter(m => ((m.date >= startDate) && (m.date <= endDate)))));
+    // this.chunks.forEach(chunk => console.log(chunk.mutations.filter(m => ((m.date >= startDate) && (m.date <= endDate)))));
 
     let united = {};
-    let i=0;
     const chunks = this.getChunks();
     console.log('Have chunks for the following accounts:', chunks.map(c => c.account))
     for (let i=0; i < chunks.length; i++) {
-      if (accountsToInclude.indexOf(chunks[i].account) === -1) {
-        console.log(`WARNING: ${chunks[i].account} is not in the list`, accountsToInclude);
-      }
+      // if (accountsToInclude.indexOf(chunks[i].account) === -1) {
+      //   console.log(`WARNING: ${chunks[i].account} is not in the list`, accountsToInclude);
+      // }
       // we will look at mutations from one of our accounts to one of our other accounts.
 
       const mutationsToSelf = chunks[i].mutations.filter(m => ((accountsToInclude.indexOf(m.from) !== -1) && (accountsToInclude.indexOf(m.to) !== -1) && (m.date >= startDate) && (m.date <= endDate)));

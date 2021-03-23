@@ -21,8 +21,8 @@ export function parseHours (args: { hours: { [ projectName: string]: HoursProjec
     if (project.rate) {
       project.entries.forEach((entry: Entry) => {
         mutations.push(new WorldLedgerMutation({
-          from: 'work',
-          to: projectName,
+          from: 'worked',
+          to: `me@${projectName}`,
           date: new Date(`${entry.date} ${args.year}`),
           amount: entry.numHours * project.rate,
           unit: 'EUR',

@@ -22,6 +22,40 @@ export class AccountHistoryChunk {
     this.endDate = options.endDate
     this.importedFrom = options.importedFrom
   }
+  restrictedTo(startDate: Date, endDate: Date): AccountHistoryChunk | null {
+    if ((startDate > this.endDate) || (endDate < this.startDate)) {
+      console.log('restricting to those dates leaves nothing');
+      return null;
+    }
+    let balance: number
+    let unit: string
+    let startIndex: number
+    let endIndex: number
+    if (this.startBalance) {
+      balance = this.startBalance.amount
+      unit = this.startBalance.unit
+    }
+    for (let i = 0; i < this.mutations.length && this.mutations[i].date < endDate; i++) {
+      if (this.mutations[i].date < startDate && balance !== undefined) {
+        balance += this.mutations[i].amount
+      }
+      if (this.mutations[i].date >= startDate && startIndex === undefined) {
+        startIndex = i
+      }
+      if (this.mutations[i].date <= endDate) {
+        endIndex = i
+      }
+    }
+    console.log('restricting', this.startDate, this.endDate, this.mutations.length, startIndex, endIndex + 1, balance, this.startBalance.amount);
+    return new AccountHistoryChunk({
+      account: this.account,
+      startDate,
+      endDate,
+      mutations: this.mutations.slice(startIndex, endIndex + 1),
+      startBalance: { amount: balance, unit },
+      importedFrom: this.importedFrom
+    })
+  }
   splitAt(date: Date): AccountHistoryChunk[] {
     let balance: number
     let splitIndex: number
