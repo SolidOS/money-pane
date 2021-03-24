@@ -44,3 +44,29 @@ To see a report of your personal spending habits against your self-imposed budge
 I (Michiel de Jong) am running this with my own data root file now, ping me in
 https://gitter.im/solid/solidos if you want to know more about its format, I can
 create an up-to-date anonymized example data root file.
+
+## Some notes about the current data format
+
+(subject to change)
+
+### Tracking the arms of the Y
+Entries from an imported bank statement is interpreted with the Y-model:
+
+```
+Arrivals          Departures
+          \   / 
+            * (bank account)
+            |
+            me
+```
+
+A credit entry implies one mutation from `Arrivals` (for instance another IBAN bank account) to `* (bank account)` and another mutation from `* (bank account)` to `me`.
+A debit entry implies one mutation from `me` to `* (bank account)` and another mutation from `* (bank account)` to `Arrivals` (for instance another IBAN bank account).
+In the `AccountHistoryChunk#mutations: WorldLedgerMutation[]` we track the "arms" of the Y, so only the
+mutations from `Arrivals` (for instance another IBAN bank account) to `* (bank account)` and from `* (bank account)` to `Arrivals` (for instance another IBAN bank account),
+*not* the mutations between `* (bank account)` and `me`.
+
+This may seem unnatural since the entries describe mutations that change the balance between `* (bank account)` and `me`. But each can be derived from the other, it doesn't
+seem useful to store both, the arrivals and departures contain more information, and for matching mutations-to-self (e.g. savings account to current account) we already need
+to list out the arrivals and departures, so for now we decided to leave out the mutations between bank account and customer. It can of course be reconstructed at any time
+using a method like `AccountHistoryChunk#getAccountMutations`.

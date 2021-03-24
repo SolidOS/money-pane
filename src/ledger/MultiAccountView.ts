@@ -120,7 +120,7 @@ export class MultiAccountView {
     this.addChunk(expenses);
   }
   
-  addBudgets (budget: any, startDate: Date, endDate: Date) {
+  addBudgets (budget: any, budgetGranularityDays: number, startDate: Date, endDate: Date) {
     const budgets = new AccountHistoryChunk({
       account: 'budgets', // hmmm
       startDate: this.getStartDate(),
@@ -128,20 +128,22 @@ export class MultiAccountView {
       mutations: [],
       importedFrom: []
     });
-    Object.keys(budget).forEach(budgetName => {
-      [2020, 2021].forEach(year => {
-        ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].forEach(month => {
-          budgets.mutations.push(new WorldLedgerMutation({
-            from: budgetName,
-            to: 'budget',
-            date: new Date(`1 ${month} ${year}`),
-            amount: budget[budgetName],
-            unit: 'EUR',
-            data: {}
-          }));   
-        });
+    let date = startDate;
+    while(date < endDate) {
+      Object.keys(budget).forEach(budgetName => {
+        const args = {
+          from: budgetName,
+          to: 'budget',
+          date,
+          amount: budget[budgetName]*budgetGranularityDays,
+          unit: 'EUR',
+          data: {}
+        };
+        console.log('Adding budget', args);
+        budgets.mutations.push(new WorldLedgerMutation(args));   
       });
-    });
+      date = new Date(date.getTime() + 24*3600*1000*budgetGranularityDays);
+    }
     this.addChunk(budgets.restrictedTo(startDate, endDate));
   }
   
