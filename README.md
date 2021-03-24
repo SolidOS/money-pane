@@ -60,8 +60,8 @@ Arrivals          Departures
             me
 ```
 
-A credit entry implies one mutation from `Arrivals` (for instance another IBAN bank account) to `* (bank account)` and another mutation from `* (bank account)` to `me`.
-A debit entry implies one mutation from `me` to `* (bank account)` and another mutation from `* (bank account)` to `Arrivals` (for instance another IBAN bank account).
+A debit entry implies one mutation from `Arrivals` (for instance another IBAN bank account) to `* (bank account)` and another mutation from `* (bank account)` to `me` (account balance increases).
+A credit entry implies one mutation from `me` to `* (bank account)`  (account balance decreases) and another mutation from `* (bank account)` to `Arrivals` (for instance another IBAN bank account).
 In the `AccountHistoryChunk#mutations: WorldLedgerMutation[]` we track the "arms" of the Y, so only the
 mutations from `Arrivals` (for instance another IBAN bank account) to `* (bank account)` and from `* (bank account)` to `Arrivals` (for instance another IBAN bank account),
 *not* the mutations between `* (bank account)` and `me`.
