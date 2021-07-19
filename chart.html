@@ -1,24 +1,26 @@
 <canvas id="myChart" width="400" height="400"></canvas>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.4.1/dist/chart.min.js"></script>
+<script src="books.js"></script>
 
 
 <script>
-    const DATA_COUNT = 7;
-    const NUMBER_CFG = {count: DATA_COUNT, min: -100, max: 100};
 
-    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+    const DATA_COUNT = 12;
+    const NUMBER_CFG = {count: DATA_COUNT, min: -10000, max: 100};
+
+    const labels = ['Jul 20', 'Aug 20', 'Sep 20', 'Oct 20', 'Nov 20', 'Dec 20', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
     const data = {
     labels: labels,
     datasets: [
         {
         label: 'Dataset 1',
-        data: [5,45,1,5,2,3,4],
+        data: Books.seriesCash,
         borderColor: 'red',
         backgroundColor: 'pink',
         },
         {
         label: 'Dataset 2',
-        data: [5,45,1,4,2,3,4],
+        data: Books.seriesEquity,
         borderColor: 'blue',
         backgroundColor: 'lightblue',
         }
