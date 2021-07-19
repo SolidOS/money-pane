@@ -4,13 +4,29 @@
 
 
 <script>
+    let max = 0;
+    let min = 0;
+    let labels = [];
+    const now = new Date().getTime();
+    for (t = new Date('1 jul 2020').getTime(); t < now; t += 24 * 3600 * 1000) {
+      labels.push(new Date(t));
+    }
+    [ Books.seriesCash, Books.seriesEquity].forEach(arr => {
+        arr.forEach(x => {
+            if (x < min) {
+                min = x;
+            }
+            if (x > max) {
+                max = x;
+            }
+        })
+    });
 
-    const DATA_COUNT = 12;
-    const NUMBER_CFG = {count: DATA_COUNT, min: -10000, max: 100};
+    const DATA_COUNT = Books.seriesCash.length;
+    const NUMBER_CFG = {count: DATA_COUNT, min, max};
 
-    const labels = ['Jul 20', 'Aug 20', 'Sep 20', 'Oct 20', 'Nov 20', 'Dec 20', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
     const data = {
-    labels: labels,
+        labels,
     datasets: [
         {
         label: 'Dataset 1',
