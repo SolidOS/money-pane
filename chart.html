@@ -1,0 +1,45 @@
+<canvas id="myChart" width="400" height="400"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.4.1/dist/chart.min.js"></script>
+
+
+<script>
+    const DATA_COUNT = 7;
+    const NUMBER_CFG = {count: DATA_COUNT, min: -100, max: 100};
+
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+    const data = {
+    labels: labels,
+    datasets: [
+        {
+        label: 'Dataset 1',
+        data: [5,45,1,5,2,3,4],
+        borderColor: 'red',
+        backgroundColor: 'pink',
+        },
+        {
+        label: 'Dataset 2',
+        data: [5,45,1,4,2,3,4],
+        borderColor: 'blue',
+        backgroundColor: 'lightblue',
+        }
+    ]
+    };
+    const config = {
+    type: 'line',
+    data: data,
+    options: {
+        responsive: true,
+        plugins: {
+        legend: {
+            position: 'top',
+        },
+        title: {
+            display: true,
+            text: 'Chart.js Line Chart'
+        }
+        }
+    },
+    };
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, config);
+</script>
