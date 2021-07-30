@@ -1,0 +1,101 @@
+<html>
+    <body>
+        <div>
+            <canvas id="myChart" style="width:70%; height:70%;"></canvas>
+            <!-- <canvas id="myChart"></canvas> -->
+        </div>
+    </body>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.4.1/dist/chart.min.js"></script>
+    <script src="books.js"></script>
+    <script>
+        let max = 0;
+        let min = 0;
+        let labels = [];
+        const monthNames = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        const now = new Date().getTime();
+        for (t = new Date('30 jun 2020').getTime(); t < now; t += Books.step * 24 * 3600 * 1000) {
+            // labels.push(`${new Date(t).getDate()} ${monthNames[new Date(t).getMonth()]} '${new Date(t).getFullYear() % 100}`);
+            labels.push(`${monthNames[new Date(t).getMonth()]}-${new Date(t).getFullYear() % 100}`);
+        }
+        // console.log()
+        [ Books.seriesLiquid, Books.seriesLiquidCredit, Books.seriesLiquidCreditAssets].forEach(arr => {
+            arr.forEach(x => {
+                if (x < min) {
+                    min = x;
+                }
+                if (x > max) {
+                    max = x;
+                }
+            })
+        });
+        max *= 2;
+        min *= 2;
+        const DATA_COUNT = Books.seriesLiquid.length;
+        const NUMBER_CFG = {count: DATA_COUNT, min, max};
+
+        const data = {
+            labels,
+        datasets: [
+        {
+            label: 'Liquid',
+            data: Books.seriesLiquid,
+            borderColor: 'blue',
+            backgroundColor: 'lightblue',
+            // fill: 'origin'
+            },
+            {
+            label: 'Credit',
+            data: Books.seriesLiquidCredit,
+            borderColor: 'red',
+            backgroundColor: 'pink',
+            fill: 0,
+            },
+            {
+            label: 'Assets',
+            data: Books.seriesLiquidCreditAssets,
+            borderColor: 'green',
+            backgroundColor: 'lightGreen',
+            fill: 1,
+            }
+        ]
+        };
+        const config = {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+            legend: {
+                position: 'bottom',
+            },
+            title: {
+                display: true,
+                text: 'Ponder Source Equity'
+            }
+            }
+        },
+        plugins: [
+        {
+            id: 'custom_canvas_background_color',
+            beforeDraw: (chart) => {
+                const ctx = chart.canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = 'lightYellow';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        }
+        ]
+        };
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, config);
+        // document.getElementById('myChart').style.width = '70%';
+        // document.getElementById('myChart').style.height = '70%';
+    </script>
+</html>
