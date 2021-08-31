@@ -16,7 +16,7 @@
     "prepublishOnly": "npm test && npm run build && npm run build-lib",
     "postpublish": "git push origin master --follow-tags",
     "watch": "webpack --watch",
-    "start": "webpack-dev-server --open",
+    "start": "webpack serve",
     "build": "webpack",
     "build-lib": "babel src -d lib --source-maps --extensions '.ts,.js'"
   },
