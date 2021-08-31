@@ -27,14 +27,15 @@ window.onload = async () => {
   console.log('document ready')
   await authn.authSession.handleIncomingRedirect()
   const onSessionUpdate = () => {
-    if (!authn.authSession.info.isLoggedIn) {
+    const currentUser = authn.currentUser()
+    if (!currentUser) {
       console.log('The user is not logged in')
       document.getElementById('loginBanner').innerHTML = '<button onclick="popupLogin()">Log in</button>'
     } else {
-      console.log(`Logged in as ${authn.authSession.info.webId}`)
+      console.log(`Logged in as ${currentUser.value}`)
 
-      document.getElementById('loginBanner').innerHTML = `Logged in as ${authn.authSession.info.webId} <button onclick="logout()">Log out</button>`
-      appendMoneyPane(document, authn.authSession.info.webId)
+      document.getElementById('loginBanner').innerHTML = `Logged in as ${currentUser.value} <button onclick="logout()">Log out</button>`
+      appendMoneyPane(document, currentUser.value)
     }
   }
 
@@ -47,7 +48,7 @@ window.onload = async () => {
   ;(window as any).location = ''
 }
 ;(window as any).popupLogin = async function () {
-  if (!authn.authSession.info.isLoggedIn) {
+  if (!authn.currentUser()) {
     authn.renderSignInPopup(document)
   }
 }
