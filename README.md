@@ -5,12 +5,6 @@ Solid-compatible personal finance insight applet for solid-panes framework
 You can build with `npm install && npm run build && cd dist && npx serve`.
 You can debug with VSCode + Chrome (see `.vscode/launch.json`).
 
-## Issue Tracker
-
-We're using the Solid OS native Issue Tracker for this project! \o/
-
-* [MoneyPane issue tracker](https://solidos.solidcommunity.net/Team/2021/money-pane-project/money%20pane/index.ttl#this)
-
 ## Import transaction statements from your bank
 
 Currently supported csv-file formats:
@@ -42,7 +36,8 @@ DATA_ROOT=dataRoot.js ./node_modules/.bin/ts-node-dev run.ts
 
 To see a report of your personal spending habits against your self-imposed budget.
 I (Michiel de Jong) am running this with my own data root file now, ping me in
-https://gitter.im/solid/solidos if you want to know more about its format, I can
+https://gitter.im/federatedbookkeeping/community
+if you want to know more about its format, I can
 create an up-to-date anonymized example data root file.
 
 ## Some notes about the current data format
