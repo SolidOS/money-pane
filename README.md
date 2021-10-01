@@ -70,3 +70,65 @@ This may seem unnatural since the entries describe mutations that change the bal
 seem useful to store both, the arrivals and departures contain more information, and for matching mutations-to-self (e.g. savings account to current account) we already need
 to list out the arrivals and departures, so for now we decided to leave out the mutations between bank account and customer. It can of course be reconstructed at any time
 using a method like `AccountHistoryChunk#getAccountMutations`.
+
+
+# Equity Graph
+To generate the equity graph:
+
+```sh
+node makeBooks.js > ./books.js
+npx serve
+```
+Then visit http://localhost:5000/chart
+
+The script `makeBooks.js converts from the data/expenses.js format
+to the ./books.js format.
+
+## entries in data/expenses.js
+The data in books.js is optimized for displaying the equity graph,
+and takes the form:
+```js
+{ seriesLiquid, seriesLiquidCredit, seriesLiquidCreditAssets, step }
+```
+Here `step` is the number of days between two dots plotted in the graph (for instance 5).
+The other items are arrays of numbers.
+
+## entries in data/expenses.js
+The file data/expenses.js should have a default export that is an array of objects (expenses).
+
+### Example expense
+```js
+  {
+    description: 'laptop',
+    file: 'expenses/laptop-michiel.pdf',
+    date: '4 jul 2020',
+    writeOffStart: '4 jul 2020',
+    writeOffEnd: '4 jul 2024', // write off ~ 150 eur per year
+    assetGroup: 'computer equipment',
+    excl: 593.43,
+    vat: 124.62,
+    from: 'nl',
+    incl: 718.05
+  },
+```
+
+### Parsing
+* if `writeOffStart` is missing, default it to `date`
+* if `writeOffEnd` is missing, default it to `date`
+* if `fooi` is missing, default it to 0
+* if `vat` is missing, default it to 0
+* if `excl` is missing, default it to `incl`
+* if `incl` is missing, default it to `salary`
+
+### Formats
+* amounts (i.e. `excl`, `vat`, `incl`, `fooi`, `salary`) can be a Float like 124.62 or a string like 'usd 15.16'
+* `from` can be `nl` or `EU` or `non-EU`
+* dates are of the format '9 aug 2021'
+* `writeOffStrategy` 'monthly' means: `writeOffStartDate` := `date` ; `writeOffEndDate` := `date` + 1 month
+* `writeOffStrategy` 'yearly' means: `writeOffStartDate` := `date` ; `writeOffEndDate` := `date` + 1 year
+
+### Effects
+* increase debt of `excl+fooi` on `date`
+* increase value of `excl+fooi` in assetGroup on `date`
+* increase `vat` to ask back
+* schedule write-off from assetGroup to /dev/null over `writeOffStart -> writeOffEnd`
