@@ -76,9 +76,11 @@ export class MultiAccountView {
     Object.keys(files).forEach((fileName: string) => {
       const fileBuffer = readFileSync(fileName, 'utf8')
       const parser = parsers[files[fileName].parser]
-      const chunk: AccountHistoryChunk = parser({ fileBuffer, fileId: fileName, details: files[fileName] }).restrictedTo(startDate, endDate)
-      this.addChunk(chunk)
-      console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
+      const chunk: AccountHistoryChunk | null = parser({ fileBuffer, fileId: fileName, details: files[fileName] }).restrictedTo(startDate, endDate)
+      if (chunk) {
+        this.addChunk(chunk)
+      }
+      console.log(`Parsed ${fileName} with ${chunk ? chunk.mutations.length : 'no'} statements`)
     })
   }
   
@@ -88,7 +90,7 @@ export class MultiAccountView {
       const chunk: AccountHistoryChunk | null = parseHours({ hours: hours[yearStr], year: parseInt(yearStr) }).restrictedTo(startDate, endDate)
       if (chunk) {
         this.addChunk(chunk)
-        console.log(`Parsed ${chunk.importedFrom[0].fileId} with ${chunk.mutations.length} statements`)
+        console.log(`Parsed hours object with ${chunk.mutations.length} statements`)
       }
     })
   }
@@ -184,6 +186,9 @@ export class MultiAccountView {
     }
   }
 
+  // todo: document how floaters work exactly
+  // it's something to do with matching transactions from two accounts
+  // (when both from and to are ours)
   printSubView(accountsToInclude: string[], startDate: Date, endDate: Date): void {
     // this.chunks.forEach(chunk => console.log(chunk.mutations.filter(m => ((m.date >= startDate) && (m.date <= endDate)))));
 
