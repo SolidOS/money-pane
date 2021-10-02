@@ -17,6 +17,10 @@ function run(startDate: Date, endDate: Date) {
   // mainLedger.trackEquity(dataRoot.myIbans, startDate, endDate);
   console.log(JSON.stringify(mainLedger, null, 2));
   const balances = {};
+  const collect = {};
+  Object.keys(dataRoot.budget).forEach(category => {
+    collect[category] = [];
+  });
   mainLedger.chunks.forEach(chunk => {
     chunk.mutations.forEach(mutation => {
       if (!balances[mutation.from]) {
@@ -27,6 +31,10 @@ function run(startDate: Date, endDate: Date) {
       }
       balances[mutation.from] -= mutation.amount;
       balances[mutation.to] += mutation.amount;
+      if (dataRoot.budget[mutation.to] !== undefined) {
+        console.log(mutation.to, mutation.amount);
+        collect[mutation.to].push([mutation.data.description, mutation.amount]);
+      }
     })
   });
   // console.log(JSON.stringify(balances, null, 2));
@@ -35,6 +43,7 @@ function run(startDate: Date, endDate: Date) {
     if (dataRoot.budget[account] !== undefined) {
       console.log(`${account}: ${balances[account]}`);
       total += balances[account];
+      console.log(JSON.stringify(collect[account], null, 2));
     }
   });
   console.log(`Total: ${total}`);
