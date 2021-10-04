@@ -99,6 +99,7 @@ function calcSpent () {
     // console.log({ arr })
     arr.forEach(v => {
       if (typeof v !== 'number') {
+        console.log('erroring on:', entry, v)
         throw new Error('not a number!', arr, entry)
       }
       if (isNaN(v)) {
