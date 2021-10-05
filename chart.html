@@ -17,8 +17,11 @@
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         ];
 
-        const now = new Date().getTime();
-        for (t = new Date('30 jun 2020').getTime(); t < now; t += Books.step * 24 * 3600 * 1000) {
+        const start = new Date('30 jun 2020').getTime();
+        // const start = new Date('30 jun 2021').getTime();
+        const end = new Date('30 jun 2022').getTime();
+        // const end = new Date().getTime();
+        for (t = start; t < end; t += Books.step * 24 * 3600 * 1000) {
             // labels.push(`${new Date(t).getDate()} ${monthNames[new Date(t).getMonth()]} '${new Date(t).getFullYear() % 100}`);
             labels.push(`${monthNames[new Date(t).getMonth()]}-${new Date(t).getFullYear() % 100}`);
         }

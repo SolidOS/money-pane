@@ -2,6 +2,7 @@ const hours = require('./data/hours.js')
 
 const USD_TO_EUR = 0.85
 const expenses = require('./data/expenses.js')
+const transactions = require('./data/transactions.js')
 
 function parseCurrency (x) {
   if (typeof x === 'string') {
@@ -146,21 +147,33 @@ function calcSpent () {
 // # hours:
 // * increase Credit
 
-const trans = []
+const trans = transactions.map(entry => {
+  // console.log('Transaction!', entry);
+  return {
+    timestamp: new Date(entry.date).getTime(),
+    liquid: entry.amount,
+    assets: 0,
+    credit: -entry.amount,
+    comment: 'trans'
+  }
+})
+
 function buy ({ timestamp, amount, vat }) {
   // console.log('buy', { timestamp, amount, vat })
   trans.push({
     timestamp,
     liquid: -amount,
     assets: amount,
-    credit: 0
+    credit: 0,
+    comment: 'buy'
   })
   if (vat > 0) {
     trans.push({
       timestamp,
       liquid: -vat,
       assets: 0,
-      credit: vat
+      credit: vat,
+      comment: 'vat'
     })
   }
 }
@@ -219,7 +232,12 @@ function printPKIData (startDate, step) {
       seriesLiquidCredit.push(liquid + credit)
       seriesLiquidCreditAssets.push(liquid + credit + assets)
       nextDate += 24 * 3600 * 1000 * step
+      // console.log(new Date(nextDate), liquid, assets, credit);
     }
+    // if ((sorted[i].timestamp > new Date('1 oct 2021'))
+    //     && (sorted[i].timestamp < new Date('31 oct 2021'))) {
+    //   console.log(sorted[i]);
+    // }
     liquid += sorted[i].liquid
     assets += sorted[i].assets
     credit += sorted[i].credit
