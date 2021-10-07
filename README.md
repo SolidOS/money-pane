@@ -29,10 +29,54 @@ git push 5apps deploy:master
 ```
 
 ## Active development
+
 You can run:
 ```sh
-DATA_ROOT=dataRoot.js ./node_modules/.bin/ts-node-dev run.ts
+mkdir data
+ln -s path/to/your/data/root.js data/root.js
+./node_modules/.bin/ts-node run.ts
 ```
+
+Data root format:
+```js
+{
+  hours: {
+    2021: ...
+  },
+  invoices: {
+    2021: ...
+  },
+  myIbans: [
+    'some-iban...',
+  ],
+  files: {
+    'path/to/file.csv': {
+      parser: 'asnbank-mt940',
+      account: 'some-iban...',
+    },
+  },
+  mcc: {
+    '0763': 'Groceries',
+  },
+  incassant: {
+    'some=iban...': 'House',
+  },
+  iban: {
+    'some=iban...': 'Transport',
+  },
+  description: {
+    'TIN RABBIT            >NEEDHAM': 'Stuff',
+  },
+  transactionType: {
+    NDIV: 'Services',
+  },
+  budget: {
+    Transport: 200/30, // daily budget amount in main currency e.g. euros
+  },
+  months: {
+    '2021-09',
+  }
+}
 
 To see a report of your personal spending habits against your self-imposed budget.
 I (Michiel de Jong) am running this with my own data root file now, ping me in

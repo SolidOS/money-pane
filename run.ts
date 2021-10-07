@@ -2,7 +2,7 @@
 import { MultiAccountView } from './src/Ledger'
 
 // eslint-disable-next-line import/no-absolute-path
-const dataRoot = require(process.env.DATA_ROOT);
+const dataRoot = require('./data/root.js');
 
 const BUDGET_GRANULARITY_DAYS = 1;
 
