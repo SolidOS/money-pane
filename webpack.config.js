@@ -39,7 +39,7 @@ module.exports = [{
     '@trust/webcrypto': 'crypto'
   },
   devServer: {
-    contentBase: './dist'
+    static: './dist'
   },
   devtool: 'source-map'
 },

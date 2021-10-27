@@ -1,7 +1,6 @@
 /* global SolidAuthClient */
 import { sym } from 'rdflib'
-import { store } from 'solid-ui'
-import * as SolidAuth from 'solid-auth-client'
+import { store, authn } from 'solid-ui'
 import { MoneyPane } from './moneyPane'
 
 const LEDGER_DOC = '/ledger.ttl'
@@ -24,28 +23,32 @@ async function appendMoneyPane (dom: HTMLDocument, currentWebId: string) {
 document.addEventListener('DOMContentLoaded', function () {
 })
 
-window.onload = () => {
+window.onload = async () => {
   console.log('document ready')
-  SolidAuth.trackSession(async session => {
-    if (!session) {
+  await authn.authSession.handleIncomingRedirect()
+  const onSessionUpdate = () => {
+    const currentUser = authn.currentUser()
+    if (!currentUser) {
       console.log('The user is not logged in')
       document.getElementById('loginBanner').innerHTML = '<button onclick="popupLogin()">Log in</button>'
     } else {
-      console.log(`Logged in as ${session.webId}`)
+      console.log(`Logged in as ${currentUser.value}`)
 
-      document.getElementById('loginBanner').innerHTML = `Logged in as ${session.webId} <button onclick="logout()">Log out</button>`
-      appendMoneyPane(document, session.webId)
+      document.getElementById('loginBanner').innerHTML = `Logged in as ${currentUser.value} <button onclick="logout()">Log out</button>`
+      appendMoneyPane(document, currentUser.value)
     }
-  })
+  }
+
+  authn.authSession.onLogin(() => onSessionUpdate())
+  authn.authSession.onSessionRestore(() => onSessionUpdate())
+  onSessionUpdate()
 }
 ;(window as any).logout = () => {
-  SolidAuth.logout()
+  authn.authSession.logout()
   ;(window as any).location = ''
 }
 ;(window as any).popupLogin = async function () {
-  let session = await SolidAuth.currentSession()
-  const popupUri = 'https://solidcommunity.net/common/popup.html'
-  if (!session) {
-    session = await SolidAuth.popupLogin({ popupUri })
+  if (!authn.currentUser()) {
+    authn.renderSignInPopup(document)
   }
 }
