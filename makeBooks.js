@@ -148,7 +148,11 @@ function calcSpent () {
 // * increase Credit
 
 const trans = transactions.map(entry => {
-  // console.log('Transaction!', entry);
+  // console.log('Transaction!', entry)
+  if (isNaN(entry.amount)) {
+    console.log({ entry })
+    throw new Error('NaN amount!')
+  }
   return {
     timestamp: new Date(entry.date).getTime(),
     liquid: entry.amount,
@@ -232,7 +236,7 @@ function printPKIData (startDate, step) {
       seriesLiquidCredit.push(liquid + credit)
       seriesLiquidCreditAssets.push(liquid + credit + assets)
       nextDate += 24 * 3600 * 1000 * step
-      // console.log(new Date(nextDate), liquid, assets, credit);
+      // console.log(new Date(nextDate), liquid, assets, credit)
     }
     // if ((sorted[i].timestamp > new Date('1 oct 2021'))
     //     && (sorted[i].timestamp < new Date('31 oct 2021'))) {

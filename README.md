@@ -115,7 +115,7 @@ using a method like `AccountHistoryChunk#getAccountMutations`.
 To generate the equity graph:
 
 ```sh
-node makeBooks.js > ./books.js
+node makeBooks.js > ./data/books.js
 npx serve
 ```
 Then visit http://localhost:5000/chart
@@ -123,7 +123,7 @@ Then visit http://localhost:5000/chart
 The script `makeBooks.js converts from the data/expenses.js format
 to the ./books.js format.
 
-## entries in data/expenses.js
+## entries in ./books.js
 The data in books.js is optimized for displaying the equity graph,
 and takes the form:
 ```js
@@ -131,6 +131,20 @@ and takes the form:
 ```
 Here `step` is the number of days between two dots plotted in the graph (for instance 5).
 The other items are arrays of numbers.
+
+## entries in data/transactions.js
+The file data/transactions.js should have a default export that is an array of objects (transactions).
+Use these when a client pays an outstanding invoice.
+The amount is added to 'liquid' and substracted from 'credit'.
+
+## Example transaction
+```js
+{
+  date: '3 sep 2021',
+  description: 'customer ABC paid invoice XYZ',
+  amount: 123.45
+}
+```
 
 ## entries in data/expenses.js
 The file data/expenses.js should have a default export that is an array of objects (expenses).
