@@ -2,6 +2,46 @@
 
 Solid-compatible personal finance insight applet for solid-panes framework
 
+[NOTE](https://github.com/solid/money-pane/issues/42#issuecomment-1003326750):
+We are moving our books from our own custom `HalfLedger` format to the
+more commonly used [Plain Text Accounting](https://plaintextaccounting.org/)
+standard (specifially, the [HLedger](https://hledger.org/) dialect).
+
+This has many advantages, for instance, we get to profit from the existing
+ecosystem data conversion tools from/to the [H]Ledger format, as well as
+(obviously) the existing reporting tools themselves.
+
+Also, it will make our work more useful since whatever we build (e.g. importers
+for CSV formats from specific banks) will be usable by anybody who uses plain
+text accounting.
+
+We are only switching the file format, not moving away from the 'store your
+personal data on your personal data store' philosophy of Solid.
+Since your books would generally not be shared directly with others using WAC,
+this could also be a local data store (your laptop), it doesn't matter that much
+if it's not an online data store. For this same reason it doesn't matter that much
+whether we access the data using Solid-CRUD or just straightforward filesystem
+access (specifically since the most common edit operation would be a lexical append).
+We could still accept RDF documents into the pod's inbox, for instance when someone
+submits an expense, receipt, timesheet, etc from inside some Solid app. That's a parser
+we could add to the existing ecosystem of Plain Text Accounting parsers. Turtle is not
+as "plain" as CSV, but it's after all pretty close in the sense of being both simple
+to read and easy edit by hand. :)
+
+One first downside is that we no longer have a data format that is self-describing
+in a machine-readable way (in RDF, the link to the ontology acts as a machine-readable
+identifier of the data format, whereas in Plain Text Accounting files,
+it would be best practice to add a human-readable comment at the top describing
+the precise file format version. But maybe we can at some point (help to) formalize this notion
+and teach our machines to read such a file format version comment.
+
+The other downside is we can't as easily include hyperlink references to other data in a meaningful way.
+There may be a way to do something like that in Plain Text Accounting which we haven't discovered yet
+(at the least, you would expect account names and currency names to act as globally unique identifiers).
+Maybe we'll find a way to bring this part of the RDF philosophy to the Plain Text Accounting world.
+
+For now, consider this code as deprecated (with, for now, the exception of `./exportToHLedger.js`).
+
 You can build with `npm install && npm run build && cd dist && npx serve`.
 You can debug with VSCode + Chrome (see `.vscode/launch.json`).
 
