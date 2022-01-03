@@ -1,20 +1,9 @@
 const hours = require('./data/hours.js')
 
-const USD_TO_EUR = 0.85
 const expenses = require('./data/expenses.js')
 const transactions = require('./data/transactions.js')
+const { parseCurrency } = require('./utils.js')
 
-function parseCurrency (x) {
-  if (typeof x === 'string') {
-    // console.log("string!", x)
-    if (x.startsWith('usd ')) {
-      return parseInt(x.substr('usd '.length), 10) * USD_TO_EUR
-    } else {
-      throw new Error('unknown!')
-    }
-  }
-  return x
-}
 // function report(category) {
 //   let excl = 0
 //   let vat = 0
