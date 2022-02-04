@@ -26,7 +26,7 @@ function writeOff () {
   // TODO: find out how best to implement this for HLedger
 }
 
-function processExpenses () {
+function processExpenses (expenser) {
   expenses.forEach(entry => {
     // console.log(entry)
     let normalizedIncl = parseCurrency(entry.incl)
@@ -55,14 +55,19 @@ function processExpenses () {
       console.log(entry)
       throw new Error('wrong date!', entry)
     }
-    expense({
-      dateStr: new Date(entry.date),
-      amount: normalizedExcl.toFixed(2),
-      vat: normalizedVat.toFixed(2),
-      description: entry.description,
-      assetGroup: entry.assetGroup,
-      expenser: entry.expenser || 'Michiel'
-    })
+    if (!entry.expenser || entry.expenser !== expenser) {
+      // console.log(entry, 'This expense is from someone else?')
+    } else {
+      expense({
+        dateStr: new Date(entry.date),
+        amount: normalizedExcl.toFixed(2),
+        vat: normalizedVat.toFixed(2),
+        description: entry.description,
+        assetGroup: entry.assetGroup,
+        expenser
+      })
+    }
+
     if (typeof entry.writeOffStart !== 'undefined') {
       writeOff({ amount: normalizedExcl, writeOffStartTimestamp: new Date(entry.writeOffStart).getTime(), writeOffEndTimestamp: new Date(entry.writeOffEnd).getTime() })
     }
@@ -91,5 +96,7 @@ function processTransactions () {
 }
 
 // ...
-processExpenses()
-processTransactions()
+const expenser = process.argv[2]
+// console.log({ expenser })
+processExpenses(expenser)
+// processTransactions()

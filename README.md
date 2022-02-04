@@ -2,8 +2,13 @@
 
 Solid-compatible personal finance insight applet for solid-panes framework
 
+## DEPRECATED
+The experiments of the Solid Money-Pane have evolved to what is now
+the [Prejournal](https://prejournal.org) project.
+
+## Previously
 [NOTE](https://github.com/solid/money-pane/issues/42#issuecomment-1003326750):
-We are moving our books from our own custom `HalfLedger` format to the
+We have moved our books from our own custom `HalfLedger` format to the
 more commonly used [Plain Text Accounting](https://plaintextaccounting.org/)
 standard (specifially, the [HLedger](https://hledger.org/) dialect).
 
