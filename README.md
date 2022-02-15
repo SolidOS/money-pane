@@ -4,7 +4,12 @@ Solid-compatible personal finance insight applet for solid-panes framework
 
 ## DEPRECATED
 The experiments of the Solid Money-Pane have evolved to what is now
-the [Prejournal](https://prejournal.org) project.
+the [Prejournal](https://prejournal.org) project which is no longer strongly
+tied to Solid.
+
+Please check out [SolidBase](https://lab.allmende.io/solidbase/solidbase), 
+[ValueFlo.ws](https://www.valueflo.ws/) and [Mikorzal](http://mikorizal.org/futures.html) instead,
+which may currently be closer to what you're looking for.
 
 ## Previously
 [NOTE](https://github.com/solid/money-pane/issues/42#issuecomment-1003326750):
