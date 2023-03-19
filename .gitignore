@@ -71,3 +71,6 @@ typings/
 
 # JetBrains based IDEs, such as WebStorm
 .idea
+
+# MacOS
+.DS_Store
