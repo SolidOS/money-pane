@@ -4,7 +4,7 @@ Solid-compatible personal finance insight applet for solid-panes framework
 
 ## DEPRECATED
 The experiments of the Solid Money-Pane have evolved to what is now
-the [Prejournal](https://prejournal.org) project which is no longer strongly
+the [Prejournal](https://pondersource.github.io/prejournal/) project which is no longer strongly
 tied to Solid.
 
 Please check out [SolidBase](https://lab.allmende.io/solidbase/solidbase), 
